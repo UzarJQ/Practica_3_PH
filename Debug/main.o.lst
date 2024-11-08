@@ -1,0 +1,142 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"main.c"
+  21              	.Ltext0:
+  22              		.file 1 "../main.c"
+ 1904              		.align	2
+ 1905              		.global	Main
+ 1907              	Main:
+ 1908              	.LFB0:
+   1:../main.c     **** /*********************************************************************************************
+   2:../main.c     **** * Fichero:	main.c
+   3:../main.c     **** * Autor:    
+   4:../main.c     **** * Descrip:	punto de entrada de C
+   5:../main.c     **** * Version:      <P4-ARM.timer-leds>
+   6:../main.c     **** *********************************************************************************************/
+   7:../main.c     **** 
+   8:../main.c     **** /*--- ficheros de cabecera ---*/
+   9:../main.c     **** #include "8led.h"
+  10:../main.c     **** #include "button.h"
+  11:../main.c     **** #include "led.h"
+  12:../main.c     **** #include "timer.h"
+  13:../main.c     **** #include "44blib.h"
+  14:../main.c     **** #include "44b.h"
+  15:../main.c     **** 
+  16:../main.c     **** /*--- variables globales ---*/
+  17:../main.c     **** 
+  18:../main.c     **** 
+  19:../main.c     **** /*--- codigo de funciones ---*/
+  20:../main.c     **** void Main(void)
+  21:../main.c     **** {
+ 1909              		.loc 1 21 0
+ 1910              		.cfi_startproc
+ 1911              		@ Function supports interworking.
+ 1912              		@ args = 0, pretend = 0, frame = 0
+ 1913              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1914 0000 0DC0A0E1 		mov	ip, sp
+ 1915              	.LCFI0:
+ 1916              		.cfi_def_cfa_register 12
+ 1917 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1918 0008 04B04CE2 		sub	fp, ip, #4
+ 1919              		.cfi_offset 14, -8
+ 1920              		.cfi_offset 13, -12
+ 1921              		.cfi_offset 11, -16
+ 1922              	.LCFI1:
+ 1923              		.cfi_def_cfa 11, 4
+  22:../main.c     **** 	/* Inicializa controladores */
+  23:../main.c     **** 	sys_init();         // Inicializacion de la placa, interrupciones y puertos
+ 1924              		.loc 1 23 0
+ 1925 000c FEFFFFEB 		bl	sys_init
+  24:../main.c     **** 	timer_init();	    // Inicializacion del temporizador
+ 1926              		.loc 1 24 0
+ 1927 0010 FEFFFFEB 		bl	timer_init
+  25:../main.c     **** 	Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se ver� reflejado en el 
+ 1928              		.loc 1 25 0
+ 1929 0014 FEFFFFEB 		bl	Eint4567_init
+  26:../main.c     **** 	D8Led_init();       // inicializamos el 8led
+ 1930              		.loc 1 26 0
+ 1931 0018 FEFFFFEB 		bl	D8Led_init
+  27:../main.c     **** 
+  28:../main.c     **** 
+  29:../main.c     **** 	/* Valor inicial de los leds */
+  30:../main.c     **** 	leds_off();
+ 1932              		.loc 1 30 0
+ 1933 001c FEFFFFEB 		bl	leds_off
+  31:../main.c     **** 	led1_on();
+ 1934              		.loc 1 31 0
+ 1935 0020 FEFFFFEB 		bl	led1_on
+  32:../main.c     **** 
+  33:../main.c     **** 	// Test timer1 calibration
+  34:../main.c     **** 	timer1_test();
+ 1936              		.loc 1 34 0
+ 1937 0024 FEFFFFEB 		bl	timer1_test
+ 1938 0028 000000EA 		b	.L3
+ 1939              	.L4:
+  35:../main.c     **** 
+  36:../main.c     **** 	while (1)
+  37:../main.c     **** 	{
+  38:../main.c     **** 		/* Cambia los leds con cada interrupcion del temporizador */
+  39:../main.c     **** 		if (switch_leds == 1)
+  40:../main.c     **** 		{
+  41:../main.c     **** 			leds_switch();
+  42:../main.c     **** 			switch_leds = 0;
+  43:../main.c     **** 			Eint4567_ISR();
+  44:../main.c     **** 		}
+  45:../main.c     **** 	}
+ 1940              		.loc 1 45 0
+ 1941 002c 0000A0E1 		mov	r0, r0	@ nop
+ 1942              	.L3:
+  39:../main.c     **** 		if (switch_leds == 1)
+ 1943              		.loc 1 39 0
+ 1944 0030 20309FE5 		ldr	r3, .L5
+ 1945 0034 003093E5 		ldr	r3, [r3, #0]
+ 1946 0038 010053E3 		cmp	r3, #1
+ 1947 003c FAFFFF1A 		bne	.L4
+ 1948              	.LBB2:
+  41:../main.c     **** 			leds_switch();
+ 1949              		.loc 1 41 0
+ 1950 0040 FEFFFFEB 		bl	leds_switch
+  42:../main.c     **** 			switch_leds = 0;
+ 1951              		.loc 1 42 0
+ 1952 0044 0C309FE5 		ldr	r3, .L5
+ 1953 0048 0020A0E3 		mov	r2, #0
+ 1954 004c 002083E5 		str	r2, [r3, #0]
+  43:../main.c     **** 			Eint4567_ISR();
+ 1955              		.loc 1 43 0
+ 1956 0050 FEFFFFEB 		bl	Eint4567_ISR
+ 1957              	.LBE2:
+ 1958              		.loc 1 45 0
+ 1959 0054 F5FFFFEA 		b	.L3
+ 1960              	.L6:
+ 1961              		.align	2
+ 1962              	.L5:
+ 1963 0058 00000000 		.word	switch_leds
+ 1964              		.cfi_endproc
+ 1965              	.LFE0:
+ 1967              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+                            *COM*:00000004 switch_leds
+C:\Users\Jorge\AppData\Local\Temp\cc9Hjx3S.s:1904   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9Hjx3S.s:1907   .text:00000000 Main
+C:\Users\Jorge\AppData\Local\Temp\cc9Hjx3S.s:1963   .text:00000058 $d
+                     .debug_frame:00000010 $d
+
+UNDEFINED SYMBOLS
+sys_init
+timer_init
+Eint4567_init
+D8Led_init
+leds_off
+led1_on
+timer1_test
+leds_switch
+Eint4567_ISR
