@@ -42,10 +42,10 @@ void timer_init(void)
 	pISR_TIMER0 = (unsigned)timer_ISR;
 
 	/* Configura el Timer0 */
-	rTCFG0 = 255;		 // ajusta el preescalado
-	rTCFG1 = 0x0;		 // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
-	rTCNTB0 = 65535; // valor inicial de cuenta (la cuenta es descendente)
-	rTCMPB0 = 12800; // valor de comparaci�n
+	rTCFG0 = 255;		// ajusta el preescalado
+	rTCFG1 = 0x0;		// selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
+	rTCNTB0 = 6250; // valor inicial de cuenta (la cuenta es descendente)
+	rTCMPB0 = 0;		// valor de comparaci�n
 	/* establecer update=manual (bit 1) + inverter=on (�? ser� inverter off un cero en el bit 2 pone el inverter en off)*/
 	rTCON = 0x2;
 	/* iniciar timer (bit 0) con auto-reload (bit 3)*/

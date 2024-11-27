@@ -8,7 +8,6 @@
 #include "cola.h"
 
 /*--- Variables globales ---*/
-
 static ButtonState button_state = WAITING;
 static unsigned int last_timer_value = 0;
 static Event evento = PRESSED_IRQ;
@@ -23,80 +22,71 @@ void Eint4567_ISR(void)
 {
   rINTMSK |= BIT_EINT4567; // Deshabilitar interrupciones de EINT4567
   int which_int = rEXTINTPND;
-  int exit = 0;
   button_state = PRESSED;
 
   if (button_state == PRESSED)
   {
-    while (exit == 0)
+    if ((timer1_leer() - last_timer_value) > 20201) // TRP
     {
-      if ((timer1_leer() - last_timer_value) > 20210) // TRP
-      {
-        switch (which_int)
-        {
-        case 4:
-          led8_count++;
-          button_id = 6;
-          last_timer_value = timer1_leer();
-          push_debug(evento, button_id, last_timer_value);
-          break;
-        case 8:
-          led8_count--;
-          button_id = 7;
-          last_timer_value = timer1_leer();
-          push_debug(evento, button_id, last_timer_value);
-          break;
-        default:
-          break;
-        }
 
-        if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
-        {
-          button_state = MANTAINED;
-          exit = 1;
-        }
-        else
-        {
-          button_state = RELEASED;
-          exit = 1;
-        }
-        last_timer_value = timer1_leer();
+      if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
+      {
+        button_state = MANTAINED;
       }
+      else
+      {
+        button_state = RELEASED;
+      }
+
+      switch (which_int)
+      {
+      case 4:
+        led8_count++;
+        button_id = 6;
+        last_timer_value = timer1_leer();
+        push_debug(evento, button_id, last_timer_value);
+        break;
+      case 8:
+        led8_count--;
+        button_id = 7;
+        last_timer_value = timer1_leer();
+        push_debug(evento, button_id, last_timer_value);
+        break;
+      default:
+        break;
+      }
+      last_timer_value = timer1_leer();
     }
-    exit = 0;
   }
 
   if (button_state == MANTAINED)
   {
-    while (exit == 0)
+
+    if ((timer1_leer() - last_timer_value) > 50000) // Monitorizar cada 50 ms
     {
-      if ((timer1_leer() - last_timer_value) > 50000) // Monitorizar cada 50 ms
+      if ((rPDATG & 0x40) || (rPDATG & 0x80))
       {
-        if ((rPDATG & 0x40) || (rPDATG & 0x80))
-        {
-          button_state = RELEASED;
-          exit = 1;
-        }
+        button_state = RELEASED;
       }
-      last_timer_value = timer1_leer();
+      else
+      {
+        button_state = MANTAINED;
+      }
     }
-    exit = 0;
+    last_timer_value = timer1_leer();
+
     last_timer_value = timer1_leer();
   }
 
   if (button_state == RELEASED)
   {
-    while (exit == 0)
+
+    if ((timer1_leer() - last_timer_value) > 20201) // TRD
     {
-      if ((timer1_leer() - last_timer_value) > 20210) // TRD
-      {
-        evento = RELEASED_IRQ;
-        push_debug(evento, button_id, last_timer_value);
-        exit = 1;
-        button_state = WAITING;
-      }
+      evento = RELEASED_IRQ;
+      push_debug(evento, button_id, last_timer_value);
+      button_state = WAITING;
     }
-    exit = 0;
   }
 
   D8Led_symbol(led8_count & 0xf);

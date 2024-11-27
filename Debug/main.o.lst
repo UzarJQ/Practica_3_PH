@@ -11,14 +11,14 @@
   11              		.file	"main.c"
   21              	.Ltext0:
   22              		.file 1 "../main.c"
- 2167              		.align	2
- 2170              	switch_leds:
- 2171 0000 00000000 		.space	4
- 2172              		.text
- 2173              		.align	2
- 2174              		.global	Main
- 2176              	Main:
- 2177              	.LFB0:
+ 2194              		.align	2
+ 2197              	switch_leds:
+ 2198 0000 00000000 		.space	4
+ 2199              		.text
+ 2200              		.align	2
+ 2201              		.global	Main
+ 2203              	Main:
+ 2204              	.LFB0:
    1:../main.c     **** /*********************************************************************************************
    2:../main.c     ****  * Fichero:	main.c
    3:../main.c     ****  * Autor:
@@ -42,49 +42,49 @@
   21:../main.c     **** /*--- codigo de funciones ---*/
   22:../main.c     **** void Main(void)
   23:../main.c     **** {
- 2178              		.loc 1 23 0
- 2179              		.cfi_startproc
- 2180              		@ Function supports interworking.
- 2181              		@ args = 0, pretend = 0, frame = 0
- 2182              		@ frame_needed = 1, uses_anonymous_args = 0
- 2183 0000 0DC0A0E1 		mov	ip, sp
- 2184              	.LCFI0:
- 2185              		.cfi_def_cfa_register 12
- 2186 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2187 0008 04B04CE2 		sub	fp, ip, #4
- 2188              		.cfi_offset 14, -8
- 2189              		.cfi_offset 13, -12
- 2190              		.cfi_offset 11, -16
- 2191              	.LCFI1:
- 2192              		.cfi_def_cfa 11, 4
+ 2205              		.loc 1 23 0
+ 2206              		.cfi_startproc
+ 2207              		@ Function supports interworking.
+ 2208              		@ args = 0, pretend = 0, frame = 0
+ 2209              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2210 0000 0DC0A0E1 		mov	ip, sp
+ 2211              	.LCFI0:
+ 2212              		.cfi_def_cfa_register 12
+ 2213 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 2214 0008 04B04CE2 		sub	fp, ip, #4
+ 2215              		.cfi_offset 14, -8
+ 2216              		.cfi_offset 13, -12
+ 2217              		.cfi_offset 11, -16
+ 2218              	.LCFI1:
+ 2219              		.cfi_def_cfa 11, 4
   24:../main.c     **** 	/* Inicializa controladores */
   25:../main.c     **** 	sys_init();						// Inicialización de la placa, interrupciones y puertos
- 2193              		.loc 1 25 0
- 2194 000c FEFFFFEB 		bl	sys_init
+ 2220              		.loc 1 25 0
+ 2221 000c FEFFFFEB 		bl	sys_init
   26:../main.c     **** 	timer_init();					// Inicialización del temporizador Timer0
- 2195              		.loc 1 26 0
- 2196 0010 FEFFFFEB 		bl	timer_init
+ 2222              		.loc 1 26 0
+ 2223 0010 FEFFFFEB 		bl	timer_init
   27:../main.c     **** 	timer1_inicializar(); // Inicialización del Timer1
- 2197              		.loc 1 27 0
- 2198 0014 FEFFFFEB 		bl	timer1_inicializar
+ 2224              		.loc 1 27 0
+ 2225 0014 FEFFFFEB 		bl	timer1_inicializar
   28:../main.c     **** 	timer2_init();				// Inicialización del Timer2 para el latido del LED
- 2199              		.loc 1 28 0
- 2200 0018 FEFFFFEB 		bl	timer2_init
+ 2226              		.loc 1 28 0
+ 2227 0018 FEFFFFEB 		bl	timer2_init
   29:../main.c     **** 	Eint4567_init();			// Inicializar los pulsadores
- 2201              		.loc 1 29 0
- 2202 001c FEFFFFEB 		bl	Eint4567_init
+ 2228              		.loc 1 29 0
+ 2229 001c FEFFFFEB 		bl	Eint4567_init
   30:../main.c     **** 	D8Led_init();					// Inicializar el display 8 LED
- 2203              		.loc 1 30 0
- 2204 0020 FEFFFFEB 		bl	D8Led_init
+ 2230              		.loc 1 30 0
+ 2231 0020 FEFFFFEB 		bl	D8Led_init
   31:../main.c     **** 
   32:../main.c     **** 	/* Valor inicial de los leds */
   33:../main.c     **** 	leds_off(); // Apagar todos los LEDS
- 2205              		.loc 1 33 0
- 2206 0024 FEFFFFEB 		bl	leds_off
+ 2232              		.loc 1 33 0
+ 2233 0024 FEFFFFEB 		bl	leds_off
   34:../main.c     **** 	led1_on();	// Encender el LED derecho inicialmente
- 2207              		.loc 1 34 0
- 2208 0028 FEFFFFEB 		bl	led1_on
- 2209              	.L2:
+ 2234              		.loc 1 34 0
+ 2235 0028 FEFFFFEB 		bl	led1_on
+ 2236              	.L2:
   35:../main.c     **** 
   36:../main.c     **** 	while (1)
   37:../main.c     **** 	{
@@ -97,17 +97,17 @@
   44:../main.c     **** 
   45:../main.c     **** 		/* Llamada para gestionar el estado del botón */
   46:../main.c     **** 	}
- 2210              		.loc 1 46 0 discriminator 1
- 2211 002c FEFFFFEA 		b	.L2
- 2212              		.cfi_endproc
- 2213              	.LFE0:
- 2215              	.Letext0:
+ 2237              		.loc 1 46 0 discriminator 1
+ 2238 002c FEFFFFEA 		b	.L2
+ 2239              		.cfi_endproc
+ 2240              	.LFE0:
+ 2242              	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-C:\Users\Jorge\AppData\Local\Temp\ccf3FSO1.s:2170   .bss:00000000 switch_leds
-C:\Users\Jorge\AppData\Local\Temp\ccf3FSO1.s:2167   .bss:00000000 $d
-C:\Users\Jorge\AppData\Local\Temp\ccf3FSO1.s:2173   .text:00000000 $a
-C:\Users\Jorge\AppData\Local\Temp\ccf3FSO1.s:2176   .text:00000000 Main
+C:\Users\Jorge\AppData\Local\Temp\ccf95G2f.s:2197   .bss:00000000 switch_leds
+C:\Users\Jorge\AppData\Local\Temp\ccf95G2f.s:2194   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\ccf95G2f.s:2200   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\ccf95G2f.s:2203   .text:00000000 Main
                      .debug_frame:00000010 $d
 
 UNDEFINED SYMBOLS

@@ -3,7 +3,10 @@
     "def.h": "c",
     "cola.h": "c",
     "eventos.h": "c",
-    "8led.h": "c"
+    "8led.h": "c",
+    "44b.h": "c",
+    "option.h": "c",
+    "button.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }
