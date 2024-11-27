@@ -1,0 +1,230 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"pila.c"
+  21              	.Ltext0:
+  22              		.file 1 "../pila.c"
+ 1230              		.align	2
+ 1233              	indice_pila:
+ 1234 0000 00000000 		.space	4
+ 1235              		.text
+ 1236              		.align	2
+ 1237              		.global	push_debug
+ 1239              	push_debug:
+ 1240              	.LFB0:
+   1:../pila.c     **** #include "cola.h"
+   2:../pila.c     **** #include "8led.h"
+   3:../pila.c     **** 
+   4:../pila.c     **** /*--- Definiciones de la Pila de Depuración ---*/
+   5:../pila.c     **** 
+   6:../pila.c     **** EventoDebug pila_debug[stack_size];
+   7:../pila.c     **** unsigned int indice_pila = 0;
+   8:../pila.c     **** 
+   9:../pila.c     **** /*--- Funciones ---*/
+  10:../pila.c     **** 
+  11:../pila.c     **** // Agregar un evento a la pila de depuración
+  12:../pila.c     **** void push_debug(uint8_t ID_evento, uint32_t datos_complementarios, unsigned int momento)
+  13:../pila.c     **** {
+ 1241              		.loc 1 13 0
+ 1242              		.cfi_startproc
+ 1243              		@ Function supports interworking.
+ 1244              		@ args = 0, pretend = 0, frame = 16
+ 1245              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1246 0000 0DC0A0E1 		mov	ip, sp
+ 1247              	.LCFI0:
+ 1248              		.cfi_def_cfa_register 12
+ 1249 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1250 0008 04B04CE2 		sub	fp, ip, #4
+ 1251              		.cfi_offset 14, -8
+ 1252              		.cfi_offset 13, -12
+ 1253              		.cfi_offset 11, -16
+ 1254              	.LCFI1:
+ 1255              		.cfi_def_cfa 11, 4
+ 1256 000c 10D04DE2 		sub	sp, sp, #16
+ 1257 0010 0030A0E1 		mov	r3, r0
+ 1258 0014 14100BE5 		str	r1, [fp, #-20]
+ 1259 0018 18200BE5 		str	r2, [fp, #-24]
+ 1260 001c 0D304BE5 		strb	r3, [fp, #-13]
+  14:../pila.c     ****   if (indice_pila > stack_size)
+ 1261              		.loc 1 14 0
+ 1262 0020 DC309FE5 		ldr	r3, .L3
+ 1263 0024 003093E5 		ldr	r3, [r3, #0]
+ 1264 0028 140053E3 		cmp	r3, #20
+ 1265 002c 0200009A 		bls	.L2
+  15:../pila.c     ****   {
+  16:../pila.c     ****     indice_pila = 0;
+ 1266              		.loc 1 16 0
+ 1267 0030 CC309FE5 		ldr	r3, .L3
+ 1268 0034 0020A0E3 		mov	r2, #0
+ 1269 0038 002083E5 		str	r2, [r3, #0]
+ 1270              	.L2:
+  17:../pila.c     ****   }
+  18:../pila.c     ****   pila_debug[indice_pila].ID_evento = ID_evento;
+ 1271              		.loc 1 18 0
+ 1272 003c C0309FE5 		ldr	r3, .L3
+ 1273 0040 002093E5 		ldr	r2, [r3, #0]
+ 1274 0044 BC109FE5 		ldr	r1, .L3+4
+ 1275 0048 0230A0E1 		mov	r3, r2
+ 1276 004c 8330A0E1 		mov	r3, r3, asl #1
+ 1277 0050 023083E0 		add	r3, r3, r2
+ 1278 0054 0331A0E1 		mov	r3, r3, asl #2
+ 1279 0058 033081E0 		add	r3, r1, r3
+ 1280 005c 0D205BE5 		ldrb	r2, [fp, #-13]
+ 1281 0060 0020C3E5 		strb	r2, [r3, #0]
+  19:../pila.c     ****   pila_debug[indice_pila].datos_complementarios = datos_complementarios;
+ 1282              		.loc 1 19 0
+ 1283 0064 98309FE5 		ldr	r3, .L3
+ 1284 0068 002093E5 		ldr	r2, [r3, #0]
+ 1285 006c 94009FE5 		ldr	r0, .L3+4
+ 1286 0070 0410A0E3 		mov	r1, #4
+ 1287 0074 0230A0E1 		mov	r3, r2
+ 1288 0078 8330A0E1 		mov	r3, r3, asl #1
+ 1289 007c 023083E0 		add	r3, r3, r2
+ 1290 0080 0331A0E1 		mov	r3, r3, asl #2
+ 1291 0084 033080E0 		add	r3, r0, r3
+ 1292 0088 013083E0 		add	r3, r3, r1
+ 1293 008c 14201BE5 		ldr	r2, [fp, #-20]
+ 1294 0090 002083E5 		str	r2, [r3, #0]
+  20:../pila.c     ****   pila_debug[indice_pila].momento = momento;
+ 1295              		.loc 1 20 0
+ 1296 0094 68309FE5 		ldr	r3, .L3
+ 1297 0098 002093E5 		ldr	r2, [r3, #0]
+ 1298 009c 64009FE5 		ldr	r0, .L3+4
+ 1299 00a0 0810A0E3 		mov	r1, #8
+ 1300 00a4 0230A0E1 		mov	r3, r2
+ 1301 00a8 8330A0E1 		mov	r3, r3, asl #1
+ 1302 00ac 023083E0 		add	r3, r3, r2
+ 1303 00b0 0331A0E1 		mov	r3, r3, asl #2
+ 1304 00b4 033080E0 		add	r3, r0, r3
+ 1305 00b8 013083E0 		add	r3, r3, r1
+ 1306 00bc 18201BE5 		ldr	r2, [fp, #-24]
+ 1307 00c0 002083E5 		str	r2, [r3, #0]
+  21:../pila.c     **** 
+  22:../pila.c     ****   // Incrementar el índice de forma circular (cuando llegamos al final, volvemos al inicio)
+  23:../pila.c     ****   indice_pila = (indice_pila + 1) % stack_size;
+ 1308              		.loc 1 23 0
+ 1309 00c4 38309FE5 		ldr	r3, .L3
+ 1310 00c8 003093E5 		ldr	r3, [r3, #0]
+ 1311 00cc 011083E2 		add	r1, r3, #1
+ 1312 00d0 34309FE5 		ldr	r3, .L3+8
+ 1313 00d4 912383E0 		umull	r2, r3, r1, r3
+ 1314 00d8 2322A0E1 		mov	r2, r3, lsr #4
+ 1315 00dc 0230A0E1 		mov	r3, r2
+ 1316 00e0 0331A0E1 		mov	r3, r3, asl #2
+ 1317 00e4 023083E0 		add	r3, r3, r2
+ 1318 00e8 0331A0E1 		mov	r3, r3, asl #2
+ 1319 00ec 012063E0 		rsb	r2, r3, r1
+ 1320 00f0 0C309FE5 		ldr	r3, .L3
+ 1321 00f4 002083E5 		str	r2, [r3, #0]
+  24:../pila.c     **** }
+ 1322              		.loc 1 24 0
+ 1323 00f8 0CD04BE2 		sub	sp, fp, #12
+ 1324 00fc 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1325 0100 1EFF2FE1 		bx	lr
+ 1326              	.L4:
+ 1327              		.align	2
+ 1328              	.L3:
+ 1329 0104 00000000 		.word	indice_pila
+ 1330 0108 00000000 		.word	pila_debug
+ 1331 010c CDCCCCCC 		.word	-858993459
+ 1332              		.cfi_endproc
+ 1333              	.LFE0:
+ 1335              		.align	2
+ 1336              		.global	mostrar_pila
+ 1338              	mostrar_pila:
+ 1339              	.LFB1:
+  25:../pila.c     **** 
+  26:../pila.c     **** // Mostrar los eventos en la pila de depuración usando el display de 8 segmentos
+  27:../pila.c     **** void mostrar_pila(void)
+  28:../pila.c     **** {
+ 1340              		.loc 1 28 0
+ 1341              		.cfi_startproc
+ 1342              		@ Function supports interworking.
+ 1343              		@ args = 0, pretend = 0, frame = 8
+ 1344              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1345 0110 0DC0A0E1 		mov	ip, sp
+ 1346              	.LCFI2:
+ 1347              		.cfi_def_cfa_register 12
+ 1348 0114 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1349 0118 04B04CE2 		sub	fp, ip, #4
+ 1350              		.cfi_offset 14, -8
+ 1351              		.cfi_offset 13, -12
+ 1352              		.cfi_offset 11, -16
+ 1353              	.LCFI3:
+ 1354              		.cfi_def_cfa 11, 4
+ 1355 011c 08D04DE2 		sub	sp, sp, #8
+  29:../pila.c     ****   unsigned int i;
+  30:../pila.c     ****   for (i = 0; i < stack_size; i++)
+ 1356              		.loc 1 30 0
+ 1357 0120 0030A0E3 		mov	r3, #0
+ 1358 0124 10300BE5 		str	r3, [fp, #-16]
+ 1359 0128 0F0000EA 		b	.L6
+ 1360              	.L8:
+  31:../pila.c     ****   {
+  32:../pila.c     ****     if (pila_debug[i].ID_evento != 0)
+ 1361              		.loc 1 32 0
+ 1362 012c 50109FE5 		ldr	r1, .L9
+ 1363 0130 10201BE5 		ldr	r2, [fp, #-16]
+ 1364 0134 0230A0E1 		mov	r3, r2
+ 1365 0138 8330A0E1 		mov	r3, r3, asl #1
+ 1366 013c 023083E0 		add	r3, r3, r2
+ 1367 0140 0331A0E1 		mov	r3, r3, asl #2
+ 1368 0144 033081E0 		add	r3, r1, r3
+ 1369 0148 0030D3E5 		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 1370 014c 000053E3 		cmp	r3, #0
+ 1371 0150 0200000A 		beq	.L7
+  33:../pila.c     ****     {
+  34:../pila.c     ****       // Mostrar el índice en el display de 8 segmentos, por ejemplo
+  35:../pila.c     ****       D8Led_symbol(i);
+ 1372              		.loc 1 35 0
+ 1373 0154 10301BE5 		ldr	r3, [fp, #-16]
+ 1374 0158 0300A0E1 		mov	r0, r3
+ 1375 015c FEFFFFEB 		bl	D8Led_symbol
+ 1376              	.L7:
+  30:../pila.c     ****   for (i = 0; i < stack_size; i++)
+ 1377              		.loc 1 30 0
+ 1378 0160 10301BE5 		ldr	r3, [fp, #-16]
+ 1379 0164 013083E2 		add	r3, r3, #1
+ 1380 0168 10300BE5 		str	r3, [fp, #-16]
+ 1381              	.L6:
+  30:../pila.c     ****   for (i = 0; i < stack_size; i++)
+ 1382              		.loc 1 30 0 is_stmt 0 discriminator 1
+ 1383 016c 10301BE5 		ldr	r3, [fp, #-16]
+ 1384 0170 130053E3 		cmp	r3, #19
+ 1385 0174 ECFFFF9A 		bls	.L8
+  36:../pila.c     ****     }
+  37:../pila.c     ****   }
+  38:../pila.c     **** }
+ 1386              		.loc 1 38 0 is_stmt 1
+ 1387 0178 0CD04BE2 		sub	sp, fp, #12
+ 1388 017c 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1389 0180 1EFF2FE1 		bx	lr
+ 1390              	.L10:
+ 1391              		.align	2
+ 1392              	.L9:
+ 1393 0184 00000000 		.word	pila_debug
+ 1394              		.cfi_endproc
+ 1395              	.LFE1:
+ 1397              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 pila.c
+                            *COM*:000000f0 pila_debug
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1233   .bss:00000000 indice_pila
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1230   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1236   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1239   .text:00000000 push_debug
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1329   .text:00000104 $d
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1335   .text:00000110 $a
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1338   .text:00000110 mostrar_pila
+C:\Users\Jorge\AppData\Local\Temp\ccCpIqvg.s:1393   .text:00000184 $d
+                     .debug_frame:00000010 $d
+
+UNDEFINED SYMBOLS
+D8Led_symbol

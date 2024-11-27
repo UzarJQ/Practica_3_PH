@@ -1,68 +1,127 @@
-/*********************************************************************************************
-* Fichero:	button.c
-* Autor:
-* Descrip:	Funciones de manejo de los pulsadores (EINT6-7)
-* Version:
-*********************************************************************************************/
-
-/*--- ficheros de cabecera ---*/
-#include "button.h"
+/*--- Archivo : button.c ---*/
 #include "8led.h"
+#include "led.h"
 #include "44blib.h"
 #include "44b.h"
 #include "def.h"
+#include "button.h"
+#include "cola.h"
 
-/*--- variables globales del m梔ulo ---*/
-/* int_count la utilizamos para sacar un n渕ero por el 8led.
-  Cuando se pulsa un bot髇 sumamos y con el otro restamos.  veces hay rebotes! */
-static unsigned int int_count = 0;
+/*--- Variables globales ---*/
 
-/* declaraci梟 de funci梟 que es rutina de servicio de interrupci梟
- * https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
+static ButtonState button_state = WAITING;
+static unsigned int last_timer_value = 0;
+static Event evento = PRESSED_IRQ;
+static int led8_count = 0;
+static int button_id;
+
+/* Declaraci贸n de funci贸n para ISR de Eint4567 */
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 
-/*--- c梔igo de funciones ---*/
+/* C贸digo de funciones */
 void Eint4567_ISR(void)
 {
-	/* Identificar la interrupci梟 (hay dos pulsadores)*/
-	int which_int = rEXTINTPND;
-	switch (which_int)
-	{
-		case 4:
-			int_count++; // incrementamos el contador
-			break;
-		case 8:
-			int_count--; // decrementamos el contador
-			break;
-		default:
-			break;
-	}
-	// }
-	D8Led_symbol(int_count & 0x000f); // sacamos el valor por pantalla (m梔ulo 16)
+  rINTMSK |= BIT_EINT4567; // Deshabilitar interrupciones de EINT4567
+  int which_int = rEXTINTPND;
+  int exit = 0;
+  button_state = PRESSED;
 
-	/* Finalizar ISR */
-	rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
-	rI_ISPC   |= BIT_EINT4567;		// borra el bit pendiente en INTPND
+  if (button_state == PRESSED)
+  {
+    while (exit == 0)
+    {
+      if ((timer1_leer() - last_timer_value) > 20210) // TRP
+      {
+        switch (which_int)
+        {
+        case 4:
+          led8_count++;
+          button_id = 6;
+          last_timer_value = timer1_leer();
+          push_debug(evento, button_id, last_timer_value);
+          break;
+        case 8:
+          led8_count--;
+          button_id = 7;
+          last_timer_value = timer1_leer();
+          push_debug(evento, button_id, last_timer_value);
+          break;
+        default:
+          break;
+        }
+
+        if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
+        {
+          button_state = MANTAINED;
+          exit = 1;
+        }
+        else
+        {
+          button_state = RELEASED;
+          exit = 1;
+        }
+        last_timer_value = timer1_leer();
+      }
+    }
+    exit = 0;
+  }
+
+  if (button_state == MANTAINED)
+  {
+    while (exit == 0)
+    {
+      if ((timer1_leer() - last_timer_value) > 50000) // Monitorizar cada 50 ms
+      {
+        if ((rPDATG & 0x40) || (rPDATG & 0x80))
+        {
+          button_state = RELEASED;
+          exit = 1;
+        }
+      }
+      last_timer_value = timer1_leer();
+    }
+    exit = 0;
+    last_timer_value = timer1_leer();
+  }
+
+  if (button_state == RELEASED)
+  {
+    while (exit == 0)
+    {
+      if ((timer1_leer() - last_timer_value) > 20210) // TRD
+      {
+        evento = RELEASED_IRQ;
+        push_debug(evento, button_id, last_timer_value);
+        exit = 1;
+        button_state = WAITING;
+      }
+    }
+    exit = 0;
+  }
+
+  D8Led_symbol(led8_count & 0xf);
+  rEXTINTPND = 0xf;           // Borra los bits en EXTINTPND
+  rI_ISPC |= BIT_EINT4567;    // Borra el bit pendiente en INTPND
+  rINTMSK &= ~(BIT_EINT4567); // Habilitar interrupciones de EINT4567
 }
 
 void Eint4567_init(void)
 {
-	/* Configuracion del controlador de interrupciones. Estos registros est噉 definidos en 44b.h */
-	rI_ISPC    = 0x3ffffff;		// Borra INTPND escribiendo 1s en I_ISPC
-	rEXTINTPND = 0xf;       	// Borra EXTINTPND escribiendo 1s en el propio registro
-	rINTMOD    = 0x0;		// Configura las lineas como de tipo IRQ
-	rINTCON    = 0x1;		// Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK    &= ~(BIT_EINT4567);  // habilitamos interrupcion linea eint4567 en vector de mascaras
+  // Configuraci贸n del controlador de interrupciones
+  rI_ISPC = 0x3ffffff;        // Borra INTPND escribiendo 1s en I_ISPC
+  rEXTINTPND = 0xf;           // Borra EXTINTPND escribiendo 1s en el propio registro
+  rINTMOD = 0x0;              // Configura las l铆neas como de tipo IRQ
+  rINTCON = 0x1;              // Habilita interrupciones vectorizadas y la l铆nea IRQ (FIQ no)
+  rINTMSK &= ~(BIT_EINT4567); // Habilitar interrupciones de EINT4567
 
-	/* Establece la rutina de servicio para Eint4567 */
-	pISR_EINT4567 = (int) Eint4567_ISR;
+  // Establece la rutina de servicio para Eint4567
+  pISR_EINT4567 = (unsigned)Eint4567_ISR;
 
-	/* Configuracion del puerto G */
-	rPCONG  = 0xffff;        		// Establece la funcion de los pines (EINT0-7)
-	rPUPG   = 0x0;                  // Habilita el "pull up" del puerto
-	rEXTINT = rEXTINT | 0x22222222;   // Configura las lineas de int. como de flanco de bajada
+  // Configuraci贸n del puerto G
+  rPCONG = 0xffff;                                                        // Establece la funci贸n de los pines (EINT0-7)
+  rPUPG = 0x0;                                                            // Habilita el "pull-up" del puerto
+  rEXTINT = rEXTINT | (0x2 << 0) | (0x2 << 4) | (0x2 << 8) | (0x2 << 12); // Configura las l铆neas de interrupci贸n como de flanco de bajada
 
-	/* Por precaucion, se vuelven a borrar los bits de INTPND y EXTINTPND */
-	rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
-	rI_ISPC   |= BIT_EINT4567;		// borra el bit pendiente en INTPND
+  rEXTINTPND = 0xf;        // borra los bits en EXTINTPND
+  rI_ISPC |= BIT_EINT4567; // borra el bit pendiente en INTPND
 }

@@ -6,6 +6,7 @@
 C_SRCS += \
 ../8led.c \
 ../button.c \
+../cola.c \
 ../led.c \
 ../main.c \
 ../timer.c 
@@ -13,6 +14,7 @@ C_SRCS += \
 OBJS += \
 ./8led.o \
 ./button.o \
+./cola.o \
 ./led.o \
 ./main.o \
 ./timer.o 
@@ -20,6 +22,7 @@ OBJS += \
 C_DEPS += \
 ./8led.d \
 ./button.d \
+./cola.d \
 ./led.d \
 ./main.d \
 ./timer.d 

@@ -1,0 +1,140 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"cola.c"
+  21              	.Ltext0:
+  22              		.file 1 "../cola.c"
+ 1238              		.align	2
+ 1241              	indice_pila:
+ 1242 0000 00000000 		.space	4
+ 1243              		.text
+ 1244              		.align	2
+ 1245              		.global	push_debug
+ 1247              	push_debug:
+ 1248              	.LFB0:
+   1:../cola.c     **** #include "cola.h"
+   2:../cola.c     **** #include "8led.h"
+   3:../cola.c     **** #include "eventos.h"
+   4:../cola.c     **** 
+   5:../cola.c     **** /*--- Definiciones de la Pila de Depuración ---*/
+   6:../cola.c     **** 
+   7:../cola.c     **** EventoDebug pila_debug[stack_size];
+   8:../cola.c     **** unsigned int indice_pila = 0;
+   9:../cola.c     **** 
+  10:../cola.c     **** /*--- Funciones ---*/
+  11:../cola.c     **** 
+  12:../cola.c     **** // Agregar un evento a la pila de depuración
+  13:../cola.c     **** void push_debug(Event ID_evento, uint32_t datos_complementarios, unsigned int momento)
+  14:../cola.c     **** {
+ 1249              		.loc 1 14 0
+ 1250              		.cfi_startproc
+ 1251              		@ Function supports interworking.
+ 1252              		@ args = 0, pretend = 0, frame = 16
+ 1253              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1254 0000 0DC0A0E1 		mov	ip, sp
+ 1255              	.LCFI0:
+ 1256              		.cfi_def_cfa_register 12
+ 1257 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1258 0008 04B04CE2 		sub	fp, ip, #4
+ 1259              		.cfi_offset 14, -8
+ 1260              		.cfi_offset 13, -12
+ 1261              		.cfi_offset 11, -16
+ 1262              	.LCFI1:
+ 1263              		.cfi_def_cfa 11, 4
+ 1264 000c 10D04DE2 		sub	sp, sp, #16
+ 1265 0010 0030A0E1 		mov	r3, r0
+ 1266 0014 14100BE5 		str	r1, [fp, #-20]
+ 1267 0018 18200BE5 		str	r2, [fp, #-24]
+ 1268 001c 0D304BE5 		strb	r3, [fp, #-13]
+  15:../cola.c     **** 
+  16:../cola.c     ****   pila_debug[indice_pila].ID_evento = ID_evento;
+ 1269              		.loc 1 16 0
+ 1270 0020 C8309FE5 		ldr	r3, .L2
+ 1271 0024 002093E5 		ldr	r2, [r3, #0]
+ 1272 0028 C4109FE5 		ldr	r1, .L2+4
+ 1273 002c 0230A0E1 		mov	r3, r2
+ 1274 0030 8330A0E1 		mov	r3, r3, asl #1
+ 1275 0034 023083E0 		add	r3, r3, r2
+ 1276 0038 0331A0E1 		mov	r3, r3, asl #2
+ 1277 003c 033081E0 		add	r3, r1, r3
+ 1278 0040 0D205BE5 		ldrb	r2, [fp, #-13]
+ 1279 0044 0020C3E5 		strb	r2, [r3, #0]
+  17:../cola.c     ****   pila_debug[indice_pila].datos_complementarios = datos_complementarios;
+ 1280              		.loc 1 17 0
+ 1281 0048 A0309FE5 		ldr	r3, .L2
+ 1282 004c 002093E5 		ldr	r2, [r3, #0]
+ 1283 0050 9C009FE5 		ldr	r0, .L2+4
+ 1284 0054 0410A0E3 		mov	r1, #4
+ 1285 0058 0230A0E1 		mov	r3, r2
+ 1286 005c 8330A0E1 		mov	r3, r3, asl #1
+ 1287 0060 023083E0 		add	r3, r3, r2
+ 1288 0064 0331A0E1 		mov	r3, r3, asl #2
+ 1289 0068 033080E0 		add	r3, r0, r3
+ 1290 006c 013083E0 		add	r3, r3, r1
+ 1291 0070 14201BE5 		ldr	r2, [fp, #-20]
+ 1292 0074 002083E5 		str	r2, [r3, #0]
+  18:../cola.c     ****   pila_debug[indice_pila].momento = momento;
+ 1293              		.loc 1 18 0
+ 1294 0078 70309FE5 		ldr	r3, .L2
+ 1295 007c 002093E5 		ldr	r2, [r3, #0]
+ 1296 0080 6C009FE5 		ldr	r0, .L2+4
+ 1297 0084 0810A0E3 		mov	r1, #8
+ 1298 0088 0230A0E1 		mov	r3, r2
+ 1299 008c 8330A0E1 		mov	r3, r3, asl #1
+ 1300 0090 023083E0 		add	r3, r3, r2
+ 1301 0094 0331A0E1 		mov	r3, r3, asl #2
+ 1302 0098 033080E0 		add	r3, r0, r3
+ 1303 009c 013083E0 		add	r3, r3, r1
+ 1304 00a0 18201BE5 		ldr	r2, [fp, #-24]
+ 1305 00a4 002083E5 		str	r2, [r3, #0]
+  19:../cola.c     **** 
+  20:../cola.c     ****   // Incrementar el �ndice de manera circular
+  21:../cola.c     ****   indice_pila = (indice_pila + 1) % stack_size;
+ 1306              		.loc 1 21 0
+ 1307 00a8 40309FE5 		ldr	r3, .L2
+ 1308 00ac 003093E5 		ldr	r3, [r3, #0]
+ 1309 00b0 011083E2 		add	r1, r3, #1
+ 1310 00b4 3C309FE5 		ldr	r3, .L2+8
+ 1311 00b8 912383E0 		umull	r2, r3, r1, r3
+ 1312 00bc A322A0E1 		mov	r2, r3, lsr #5
+ 1313 00c0 0230A0E1 		mov	r3, r2
+ 1314 00c4 0331A0E1 		mov	r3, r3, asl #2
+ 1315 00c8 023083E0 		add	r3, r3, r2
+ 1316 00cc 0321A0E1 		mov	r2, r3, asl #2
+ 1317 00d0 023083E0 		add	r3, r3, r2
+ 1318 00d4 0331A0E1 		mov	r3, r3, asl #2
+ 1319 00d8 012063E0 		rsb	r2, r3, r1
+ 1320 00dc 0C309FE5 		ldr	r3, .L2
+ 1321 00e0 002083E5 		str	r2, [r3, #0]
+  22:../cola.c     **** }
+ 1322              		.loc 1 22 0
+ 1323 00e4 0CD04BE2 		sub	sp, fp, #12
+ 1324 00e8 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1325 00ec 1EFF2FE1 		bx	lr
+ 1326              	.L3:
+ 1327              		.align	2
+ 1328              	.L2:
+ 1329 00f0 00000000 		.word	indice_pila
+ 1330 00f4 00000000 		.word	pila_debug
+ 1331 00f8 1F85EB51 		.word	1374389535
+ 1332              		.cfi_endproc
+ 1333              	.LFE0:
+ 1335              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 cola.c
+                            *COM*:000004b0 pila_debug
+C:\Users\Jorge\AppData\Local\Temp\cce0lxnN.s:1241   .bss:00000000 indice_pila
+C:\Users\Jorge\AppData\Local\Temp\cce0lxnN.s:1238   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\cce0lxnN.s:1244   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\cce0lxnN.s:1247   .text:00000000 push_debug
+C:\Users\Jorge\AppData\Local\Temp\cce0lxnN.s:1329   .text:000000f0 $d
+                     .debug_frame:00000010 $d
+
+NO UNDEFINED SYMBOLS
