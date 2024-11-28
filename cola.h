@@ -8,12 +8,12 @@
 
 typedef struct
 {
-  Event ID_evento;
+  int ID_evento;
   uint32_t datos_complementarios;
   unsigned int momento;
 } EventoDebug;
 
 // Declaración de funciones para la pila de depuración
-void push_debug(uint8_t ID_evento, uint32_t datos_complementarios, unsigned int momento);
+void push_debug(int ID_evento, uint32_t datos_complementarios, unsigned int momento);
 
 #endif // COLA_H

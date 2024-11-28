@@ -18,6 +18,11 @@ typedef enum
   MANTAINED
 } ButtonState;
 
+extern volatile int button_id;
+extern volatile ButtonState button_state;
+extern volatile unsigned int last_timer_value;
+extern volatile int button_flag;
+extern volatile int led8_count;
 /*--- declaracion de funciones visibles del modulo button.c/button.h ---*/
 void Eint4567_init();
 void gestionar_boton(); // Gestionar el estado del boton

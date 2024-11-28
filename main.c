@@ -23,7 +23,7 @@ void Main(void)
 {
 	/* Inicializa controladores */
 	sys_init();						// Inicialización de la placa, interrupciones y puertos
-	timer_init();					// Inicialización del temporizador Timer0
+	//timer_init();					// Inicialización del temporizador Timer0
 	timer1_inicializar(); // Inicialización del Timer1
 	timer2_init();				// Inicialización del Timer2 para el latido del LED
 	Eint4567_init();			// Inicializar los pulsadores

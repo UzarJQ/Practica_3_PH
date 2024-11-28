@@ -8,11 +8,13 @@
 #include "cola.h"
 
 /*--- Variables globales ---*/
-static ButtonState button_state = WAITING;
-static unsigned int last_timer_value = 0;
-static Event evento = PRESSED_IRQ;
-static int led8_count = 0;
-static int button_id;
+volatile int led8_count = 0;
+
+volatile int button_id;
+
+volatile unsigned int last_timer_value;
+volatile ButtonState button_state = WAITING;
+volatile int button_flag = 0;
 
 /* Declaración de función para ISR de Eint4567 */
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
@@ -21,86 +23,23 @@ void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 void Eint4567_ISR(void)
 {
   rINTMSK |= BIT_EINT4567; // Deshabilitar interrupciones de EINT4567
-  int which_int = rEXTINTPND;
 
-  if (button_state == WAITING)
+  switch (rEXTINTPND)
   {
-    if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
-    {
-      button_state = PRESSED;
-      last_timer_value = timer1_leer();
-    }
+  case 4:
+    button_id = 6;
+    push_debug(PRESSED_IRQ, button_id, timer1_leer());
+    break;
+  case 8:
+    button_id = 7;
+    push_debug(PRESSED_IRQ, button_id, timer1_leer());
+    break;
+  default:
+    break;
   }
 
-  if (button_state == PRESSED)
-  {
-    if ((timer1_leer() - last_timer_value) > 20201) // TRP
-    {
-
-      if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
-      {
-        button_state = MANTAINED;
-      }
-      else
-      {
-        button_state = RELEASED;
-      }
-
-      switch (which_int)
-      {
-      case 4:
-        led8_count++;
-        button_id = 6;
-        last_timer_value = timer1_leer();
-        push_debug(evento, button_id, last_timer_value);
-        break;
-      case 8:
-        led8_count--;
-        button_id = 7;
-        last_timer_value = timer1_leer();
-        push_debug(evento, button_id, last_timer_value);
-        break;
-      default:
-        break;
-      }
-      last_timer_value = timer1_leer();
-    }
-  }
-
-  if (button_state == MANTAINED)
-  {
-
-    if ((timer1_leer() - last_timer_value) > 50000) // Monitorizar cada 50 ms
-    {
-      if ((rPDATG & 0x40) || (rPDATG & 0x80))
-      {
-        button_state = RELEASED;
-      }
-      else
-      {
-        button_state = MANTAINED;
-      }
-    }
-    last_timer_value = timer1_leer();
-
-    last_timer_value = timer1_leer();
-  }
-
-  if (button_state == RELEASED)
-  {
-
-    if ((timer1_leer() - last_timer_value) > 20201) // TRD
-    {
-      evento = RELEASED_IRQ;
-      push_debug(evento, button_id, last_timer_value);
-      button_state = WAITING;
-    }
-  }
-
-  D8Led_symbol(led8_count & 0xf);
-  rEXTINTPND = 0xf;           // Borra los bits en EXTINTPND
-  rI_ISPC |= BIT_EINT4567;    // Borra el bit pendiente en INTPND
-  rINTMSK &= ~(BIT_EINT4567); // Habilitar interrupciones de EINT4567
+  button_flag = 1;
+  rI_ISPC |= BIT_EINT4567;
 }
 
 void Eint4567_init(void)

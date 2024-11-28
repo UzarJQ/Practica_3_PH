@@ -14,7 +14,6 @@
 /*--- variables globales ---*/
 extern int switch_leds;
 int timer1_num_int = 0; // Contador de periodos completos por el timer1
-Event timer_event = TIMER1_IRQ;
 volatile int led_event_counter = 0;
 
 /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
@@ -75,11 +74,73 @@ void timer1_inicializar(void)
 
 void timer1_ISR(void)
 {
-	timer1_num_int++; // Aumentar el contador de ciclos completos
+	timer1_num_int++; // Incrementar el contador de ciclos completos
 
-	rI_ISPC |= BIT_TIMER1; // Desactivar la solicitud de interrupcion del timer1
+	// Máquina de estados
+	switch (button_state)
+	{
+	case WAITING:
+		if (button_flag == 1) // Detectar una nueva pulsación
+		{
+			button_state = PRESSED;
+			last_timer_value = timer1_leer();
+			button_flag = 0; // Reiniciar la bandera
+		}
+		break;
 
-	//	gestionar_boton();
+	case PRESSED:
+		if ((timer1_leer() - last_timer_value) > 272016) // TRP
+		{
+			if (!(rPDATG & 0x40)) // Incrementar si botón 6
+			{
+				led8_count++;
+			}
+			else if (!(rPDATG & 0x80)) // Decrementar si botón 7
+			{
+				led8_count--;
+			}
+
+			D8Led_symbol(led8_count & 0xf); // Actualizar el display LED
+
+			if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
+			{
+				button_state = MANTAINED; // Cambiar a estado mantenido
+			}
+			else
+			{
+				button_state = RELEASED; // Cambiar a estado liberado
+			}
+			last_timer_value = timer1_leer(); // Actualizar tiempo
+		}
+		break;
+
+	case MANTAINED:
+		if ((timer1_leer() - last_timer_value) > 50000) // 50 ms
+		{
+			if ((rPDATG & 0x40) && (rPDATG & 0x80)) // Botón liberado
+			{
+				button_state = RELEASED;
+				last_timer_value = timer1_leer();
+			}
+		}
+		break;
+
+	case RELEASED:
+		if ((timer1_leer() - last_timer_value) > 720895) // TRD
+		{
+			push_debug(RELEASED_IRQ, button_id, timer1_leer());
+			button_state = WAITING;
+			rEXTINTPND = 0xF;						// Limpiar bits en EXTINTPND
+			rINTMSK &= ~(BIT_EINT4567); // Volver a habilitar las interrupciones de botones
+		}
+		break;
+
+	default:
+		button_state = WAITING; // Reiniciar en caso de error
+		break;
+	}
+
+	rI_ISPC |= BIT_TIMER1; // Limpiar interrupción
 }
 
 void timer1_empezar()
