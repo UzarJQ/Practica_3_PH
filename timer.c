@@ -15,6 +15,7 @@
 extern int switch_leds;
 int timer1_num_int = 0; // Contador de periodos completos por el timer1
 Event timer_event = TIMER1_IRQ;
+volatile int led_event_counter = 0;
 
 /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
 https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -120,50 +121,40 @@ unsigned int timer1_parar()
 
 void timer2_ISR(void)
 {
-	static int led_status = 0; // Estado del LED: 0 = apagado, 1 = encendido
+	led_event_counter++;
 
-	if (led_status == 0)
+	if (led_event_counter < 200)
 	{
-		led2_on(); // Enciende el LED derecho
-		led_status = 1;
+		led2_on();
+	}
+	else if (led_event_counter < 400)
+	{
+		led2_off();
 	}
 	else
 	{
-		led2_off(); // Apaga el LED derecho
-		led_status = 0;
+		led_event_counter = 0; // Reiniciar el contador después de 160 eventos (2 segundos)
 	}
 
-	// Borrar la solicitud de interrupción
-	rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido y pone un 1 en el bit correspondiente para desactivar la interrupción
+	rI_ISPC |= BIT_TIMER2; // Limpiar la interrupción
 }
 
 void timer2_init(void)
 {
-	// Configuración del controlador de interrupciones
-	rINTMOD = 0x0;						// Configura las líneas como de tipo IRQ
-	rINTCON = 0x1;						// Habilita interrupciones vectorizadas y la línea IRQ
-	rINTMSK &= ~(BIT_TIMER2); // Habilitar interrupciones del timer2
+	rINTMOD = 0x0;
+	rINTCON = 0x1;
+	rINTMSK &= ~(BIT_TIMER2);
 
-	// Establece la rutina de servicio para TIMER2
 	pISR_TIMER2 = (unsigned)timer2_ISR;
 
-	// Configuración del Timer2
-	// Usaremos una frecuencia más baja para asegurarnos de que el temporizador funciona como esperamos
-	rTCFG0 = 255;					 // Preescalado, para dividir la frecuencia de entrada
-	rTCFG1 &= ~(0xf << 8); // Seleccionar un divisor de 1/2 para Timer2
+	rTCFG0 = 0x8;
+	rTCFG1 = 0x0;
 
-	// Queremos 80 interrupciones por segundo, así que necesitamos calcular el valor para rTCNTB2
-	// Si el reloj de entrada tiene una frecuencia de 50 MHz:
-	// Frecuencia de reloj = 50,000,000 / (prescaler + 1) / divisor_mux
-	//                      = 50,000,000 / 256 / 2
-	//                      = 97656.25 Hz
-	// Necesitamos 80 interrupciones por segundo:
-	// Valor de rTCNTB2 = 97656.25 / 80 ≈ 1220
-	rTCNTB2 = 1220; // Configuración para obtener la frecuencia de interrupción deseada
-	rTCMPB2 = 0;		// No utilizamos el comparador en este caso
+	rTCNTB2 = 100000;
+	rTCMPB2 = 0x0;
 
-	// Configurar update manual (bit 13) para cargar el valor del buffer y luego iniciar el timer
-	rTCON |= (1 << 13);							// Establecer update=manual (bit 13)
-	rTCON &= ~(1 << 13);						// Desactivar el bit de update manual
-	rTCON |= (1 << 12) | (1 << 15); // Iniciar el timer2 (bit 12) y habilitar auto-reload (bit 15)
+	rTCON |= (1 << 13); // Actualización manual
+	rTCON &= ~(1 << 15);
+
+	rTCON = (rTCON & ~(0x1 << 13)) | (0x1 << 15) | (0x1 << 12); // Auto-reload y Start
 }

@@ -16,10 +16,6 @@ extern "C"
 #include "option.h"
 #include "../button.h"
 
-/* Buttons */
-#define Button_state (*(volatile ButtonState *)WAITING)
-#define last_timer_value (*(volatile unsigned int *)0x0)
-
 /* System */
 #define rSYSCFG (*(volatile unsigned *)0x1c00000)
 

@@ -22,7 +22,15 @@ void Eint4567_ISR(void)
 {
   rINTMSK |= BIT_EINT4567; // Deshabilitar interrupciones de EINT4567
   int which_int = rEXTINTPND;
-  button_state = PRESSED;
+
+  if (button_state == WAITING)
+  {
+    if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
+    {
+      button_state = PRESSED;
+      last_timer_value = timer1_leer();
+    }
+  }
 
   if (button_state == PRESSED)
   {
