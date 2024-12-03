@@ -464,4 +464,272 @@ SMRDATA:
 .equ	HandleEINT1,	_ISR_STARTADDRESS+4*32
 .equ	HandleEINT0,	_ISR_STARTADDRESS+4*33		/* 0xc1(c7)fff84 */
 
-		.end
+.global sudoku_candidatos_propagar_arm
+.global sudoku_candidatos_init_arm
+
+################################################################################
+.arm
+sudoku_candidatos_init_arm:
+    @ r0 = cuadricula
+    @ r1 = fila
+    @ r2 = columna
+    @ r3 = valor actual
+    @ r4 = desplazamiento fila
+    @ r5 = desplazamiento columna
+    @ r6 = 0x1FF0 lista de candidatos
+    @ r7 = desplazamiento total
+
+	MOV r9, r1						@ r9 = version propagar (C=0, ARM=1, THUMB=2)
+
+    MOV r1, #0
+    MOV r6, #0x1F00               	@ Cargar parte alta de (0x1F00)
+    ORR r6, r6, #0x00F0           	@ Combinar parte baja (0x00F0) para obtener 0x1FF0
+
+init_fila:
+    CMP r1, #9
+    BGE fin_init
+
+    LSL r4, r1, #5					@ Desplazamiento a siguiente fila (r1 * 32 bytes)
+
+    MOV r2, #0
+init_columna:
+    CMP r2, #9
+    BGE fin_init_columna
+
+    LSL r5, r2, #1					@ Desplazamiento a siguiente columna (r2 * 2 bytes)
+
+    ADD r7, r4, r5        			@ Desplazamiento total (fila + columna)
+
+    LDRH r3, [r0, r7]
+
+   	AND r8, r3, #0x8000				@ Objeter valor de la pista
+	CMP r8, #0x8000					@ Si pista == 1 se omite la inicializacion de candidatos
+    BGE skip_init
+
+    ORR r3, r3, r6        			@ celda |= 0x1FF0 - Activar todos los candidatos
+    STRH r3, [r0, r7]
+
+skip_init:
+    ADD r2, r2, #1
+    B init_columna
+
+fin_init_columna:
+    ADD r1, r1, #1
+    B init_fila
+
+fin_init:
+
+@ Recorrer la cuadricula para llamar a las versiones de propagar
+
+	MOV r10, #0							@ Contador de celdas vacias
+	MOV r1, #0
+fila_cuadricula:
+	CMP r1, #9
+	BGE fin_cuadricula
+
+	LSL r4, r1, #5
+
+	MOV r2, #0
+recorrer_columna:
+	CMP r2, #9
+	BGE siguiente_fila
+
+	LSL r6, r2, #1
+
+	ADD r7, r4, r6
+
+	LDRH r3, [r0, r7]
+
+	AND r3, r3, #0xF				@celda_leer_valor()
+	CMP r3, #0
+	BEQ skip_propagation
+
+	CMP r9, #0
+	BEQ propagar_C
+
+	CMP r9, #1
+	BEQ propagar_ARM
+skip_propagation:
+	ADD r10, r10, #1
+	B final_columna
+propagar_C:
+	STMED SP!, {r0-r12, r14}
+	BL sudoku_candidatos_propagar_c
+	LDMED SP!, {r0-r12, r14}
+	B final_columna
+propagar_ARM:
+	STMED SP!, {r0-r12, r14}
+	BL sudoku_candidatos_propagar_arm
+	LDMED SP!, {r0-r12, r14}
+	B final_columna
+#propagar_THUMB:
+#	BL sudoku_candidatos_propagar_arm
+#	B final_columna
+final_columna:
+	ADD r2, r2, #1
+	B recorrer_columna
+siguiente_fila:
+	ADD r1, r1, #1
+	B fila_cuadricula
+fin_cuadricula:
+	MOV r0, r10
+  	BX lr
+
+
+@ Calcula el desplazamiento necesario para llegar a la celda, y llama a las funciones de propagacion (fila, columna y region)
+sudoku_candidatos_propagar_arm:
+	STMFD sp!, {r11, r12, lr}
+	@ r0 = cuadricula
+	@ r1 = indice fila
+	@ r2 = indice columna
+	@ r3 = valor actual celda
+	@ r4 = desplazamiento de la fila
+	@ r5 = desplazamiento de la columna
+	@ r6 = bit desplazado (se usara para desactivar los candidatos)
+	@ r7 = desplazamiento total (r4 + r5)
+
+	LSL r4, r1, #5							@ Desplazamiento fila (r1 * 32 bytes)
+
+	LSL r5, r2, #1							@ Desplazamiento columna (r2 * 2 bytes)
+
+	ADD r7, r4, r5							@ Desplazamiento total (fila + columna)
+
+	ADD r8, r3, #3							@ r8 = displace = (3 + r3)
+
+	MOV r6, #1
+	LSL r6, r6, r8							@ desplazar bit a la izquierda r8 posiciones
+
+	LDRH r8, [r0, r7]
+
+@ Actualiza los candidatos de la fila (verticalmente)
+	MOV r9, #0
+fila_loop:
+    CMP r9, #9
+    BGE fin_fila
+
+    LSL r10, r9, #5               			@ Desplazar la fila (r9 * 32)
+    ADD r11, r10, r5               			@ r11 = desplazamiento total = fila + columna (columna fija para r5)
+
+    LDRH r8, [r0, r11]
+
+    AND r12, r8, #0x8000
+    CMP r12, #0x8000
+    BEQ skip_row
+
+    CMP r9, r1
+    BEQ skip_row
+
+    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar el bit candidato
+    STRH r8, [r0, r11]
+skip_row:
+    ADD r9, r9, #1
+    B fila_loop
+fin_fila:
+@ Actualiza los candidatos de la columna (Horizontalmente)
+	MOV r9, #0
+col_loop:
+    CMP r9, #9
+    BGE fin_col
+
+    LSL r10, r9, #1               			@ Desplazar la columna (r9 * 2)
+    ADD r11, r4, r10               			@ r11 = desplazamiento total = fila + columna (fila fija para r4)
+
+    LDRH r8, [r0, r11]
+
+    AND r12, r8, #0x8000
+    CMP r12, #0x8000
+    BEQ skip_column
+
+    CMP r9, r2
+    BEQ skip_column
+
+    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar bit candidato
+    STRH r8, [r0, r11]
+skip_column:
+    ADD r9, r9, #1
+    B col_loop
+fin_col:
+@ Calcula el limite inferior (esquina superior izquierda) y limite superior de la region 3x3 correspondiente a la celda
+	MOV r8, r1
+	MOV r9, #0
+row_index:
+	CMP r8, #3
+	BLT row_index_end						@ Si es menor a 3, termina el calculo de fila
+
+	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region vertical)
+	ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+	B row_index
+row_index_end:
+	MOV r7, r9								@ Guardar el indice calculado en r8 (fila)
+
+	MOV r8, r2
+	MOV r9, #0
+col_index:
+	CMP r8, #3
+	BLT col_index_end						@ Si es menor a 3, termina el calculo de columna
+
+	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region horizontal)
+	ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+	B col_index
+col_index_end:
+	MOV r8, r9								@ Guardar el indice calculado en r7 (columna)
+
+	ADD r9, r7, #3							@ r9 = Limite superior de la fila
+	ADD r10, r8, #3							@ r10 = Limite superior de la columna
+@ Actualiza los candidatos de la region 3x3
+region_row_loop:
+	CMP r7, r9
+	BGE end_of_region
+region_col_loop:
+	CMP r8, r10
+	BGE end_of_column
+
+	LSL r4, r7, #5							@ Desplazamiento fila (r7 * 32)
+	LSL r5, r8, #1							@ Desplazamiento columna (r10 * 2)
+	ADD r11, r4, r5							@ Desplazamiento total de la celda (fila + columna)
+
+	LDRH r12, [r0, r11]
+
+	AND r4, r12, #0x8000
+	CMP r4, #0x8000
+	BEQ skip_cell
+
+	CMP r7, r1
+	BEQ skip_cell
+
+	CMP r8, r2
+	BEQ skip_cell
+
+	BIC r12, r12, r6						@ celda &= ~(1 << displace) - Actualizar bit candidato
+	STRH r12, [r0, r11]
+skip_cell:
+	ADD r8, r8, #1
+	B region_col_loop
+end_of_column:
+	ADD r7, r7, #1
+	SUB r8, r8, #3						@ Regresar a la primera columa de la región
+	B region_row_loop
+end_of_region:
+	LDMFD sp!, {r11, r12, lr}
+	BX lr
+
+################################################################################
+.data
+.ltorg
+.align 5    /* guarantees 32-byte alignment (2^5) */
+
+# huecos para cuadrar
+.global cuadricula
+
+cuadricula:
+     /* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
+    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0, 0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x8009,0x0000,0x0000,0x0000,0x8005,0,0,0,0,0,0,0
+    .hword   0x0000,0x8009,0x8006,0x8007,0x0000,0x8005,0x0000,0x8003,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x8008,0x0000,0x8009,0x0000,0x0000,0x8006,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x8005,0x8008,0x8006,0x8001,0x8004,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x8004,0x8002,0x0000,0x8003,0x0000,0x8007,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x8007,0x0000,0x8005,0x0000,0x8009,0x8002,0x8006,0x0000,0,0,0,0,0,0,0
+    .hword   0x8006,0x0000,0x0000,0x0000,0x8008,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x8002,0x0000,0x0000,0x8001,0,0,0,0,0,0,0
+.end

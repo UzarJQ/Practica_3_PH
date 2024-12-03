@@ -11,30 +11,30 @@
   11              		.file	"8led.c"
   21              	.Ltext0:
   22              		.file 1 "../8led.c"
- 2147              		.align	2
- 2150              	Symbol:
- 2151 0000 12FFFFFF 		.word	-238
- 2152 0004 9FFFFFFF 		.word	-97
- 2153 0008 31FFFFFF 		.word	-207
- 2154 000c 15FFFFFF 		.word	-235
- 2155 0010 9CFFFFFF 		.word	-100
- 2156 0014 54FFFFFF 		.word	-172
- 2157 0018 D0FFFFFF 		.word	-48
- 2158 001c 1FFFFFFF 		.word	-225
- 2159 0020 10FFFFFF 		.word	-240
- 2160 0024 1CFFFFFF 		.word	-228
- 2161 0028 18FFFFFF 		.word	-232
- 2162 002c D0FFFFFF 		.word	-48
- 2163 0030 72FFFFFF 		.word	-142
- 2164 0034 91FFFFFF 		.word	-111
- 2165 0038 70FFFFFF 		.word	-144
- 2166 003c 78FFFFFF 		.word	-136
- 2167 0040 FFFFFFFF 		.word	-1
- 2168              		.text
- 2169              		.align	2
- 2170              		.global	D8Led_init
- 2172              	D8Led_init:
- 2173              	.LFB0:
+ 2726              		.align	2
+ 2729              	Symbol:
+ 2730 0000 12FFFFFF 		.word	-238
+ 2731 0004 9FFFFFFF 		.word	-97
+ 2732 0008 31FFFFFF 		.word	-207
+ 2733 000c 15FFFFFF 		.word	-235
+ 2734 0010 9CFFFFFF 		.word	-100
+ 2735 0014 54FFFFFF 		.word	-172
+ 2736 0018 D0FFFFFF 		.word	-48
+ 2737 001c 1FFFFFFF 		.word	-225
+ 2738 0020 10FFFFFF 		.word	-240
+ 2739 0024 1CFFFFFF 		.word	-228
+ 2740 0028 18FFFFFF 		.word	-232
+ 2741 002c D0FFFFFF 		.word	-48
+ 2742 0030 72FFFFFF 		.word	-142
+ 2743 0034 91FFFFFF 		.word	-111
+ 2744 0038 70FFFFFF 		.word	-144
+ 2745 003c 78FFFFFF 		.word	-136
+ 2746 0040 FFFFFFFF 		.word	-1
+ 2747              		.text
+ 2748              		.align	2
+ 2749              		.global	D8Led_init
+ 2751              	D8Led_init:
+ 2752              	.LFB0:
    1:../8led.c     **** /*********************************************************************************************
    2:../8led.c     **** * Fichero:	8led.c
    3:../8led.c     **** * Autor:
@@ -55,99 +55,99 @@
   18:../8led.c     **** /*--- c—digo de las funciones ---*/
   19:../8led.c     **** void D8Led_init(void)
   20:../8led.c     **** {
- 2174              		.loc 1 20 0
- 2175              		.cfi_startproc
- 2176              		@ Function supports interworking.
- 2177              		@ args = 0, pretend = 0, frame = 0
- 2178              		@ frame_needed = 1, uses_anonymous_args = 0
- 2179 0000 0DC0A0E1 		mov	ip, sp
- 2180              	.LCFI0:
- 2181              		.cfi_def_cfa_register 12
- 2182 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2183 0008 04B04CE2 		sub	fp, ip, #4
- 2184              		.cfi_offset 14, -8
- 2185              		.cfi_offset 13, -12
- 2186              		.cfi_offset 11, -16
- 2187              	.LCFI1:
- 2188              		.cfi_def_cfa 11, 4
+ 2753              		.loc 1 20 0
+ 2754              		.cfi_startproc
+ 2755              		@ Function supports interworking.
+ 2756              		@ args = 0, pretend = 0, frame = 0
+ 2757              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2758 0000 0DC0A0E1 		mov	ip, sp
+ 2759              	.LCFI0:
+ 2760              		.cfi_def_cfa_register 12
+ 2761 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 2762 0008 04B04CE2 		sub	fp, ip, #4
+ 2763              		.cfi_offset 14, -8
+ 2764              		.cfi_offset 13, -12
+ 2765              		.cfi_offset 11, -16
+ 2766              	.LCFI1:
+ 2767              		.cfi_def_cfa 11, 4
   21:../8led.c     **** 	/* Estado inicial del display con todos los segmentos iluminados
   22:../8led.c     **** 	   (buscar en los ficheros de cabecera la direccion implicada) */
   23:../8led.c     **** 	LED8ADDR = (unsigned char) cero;
- 2189              		.loc 1 23 0
- 2190 000c 8537A0E3 		mov	r3, #34865152
- 2191 0010 1220A0E3 		mov	r2, #18
- 2192 0014 0020C3E5 		strb	r2, [r3, #0]
+ 2768              		.loc 1 23 0
+ 2769 000c 8537A0E3 		mov	r3, #34865152
+ 2770 0010 1220A0E3 		mov	r2, #18
+ 2771 0014 0020C3E5 		strb	r2, [r3, #0]
   24:../8led.c     **** }
- 2193              		.loc 1 24 0
- 2194 0018 0CD04BE2 		sub	sp, fp, #12
- 2195 001c 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 2196 0020 1EFF2FE1 		bx	lr
- 2197              		.cfi_endproc
- 2198              	.LFE0:
- 2200              		.align	2
- 2201              		.global	D8Led_symbol
- 2203              	D8Led_symbol:
- 2204              	.LFB1:
+ 2772              		.loc 1 24 0
+ 2773 0018 0CD04BE2 		sub	sp, fp, #12
+ 2774 001c 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 2775 0020 1EFF2FE1 		bx	lr
+ 2776              		.cfi_endproc
+ 2777              	.LFE0:
+ 2779              		.align	2
+ 2780              		.global	D8Led_symbol
+ 2782              	D8Led_symbol:
+ 2783              	.LFB1:
   25:../8led.c     **** 
   26:../8led.c     **** void D8Led_symbol(int value)
   27:../8led.c     **** {
- 2205              		.loc 1 27 0
- 2206              		.cfi_startproc
- 2207              		@ Function supports interworking.
- 2208              		@ args = 0, pretend = 0, frame = 8
- 2209              		@ frame_needed = 1, uses_anonymous_args = 0
- 2210 0024 0DC0A0E1 		mov	ip, sp
- 2211              	.LCFI2:
- 2212              		.cfi_def_cfa_register 12
- 2213 0028 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2214 002c 04B04CE2 		sub	fp, ip, #4
- 2215              		.cfi_offset 14, -8
- 2216              		.cfi_offset 13, -12
- 2217              		.cfi_offset 11, -16
- 2218              	.LCFI3:
- 2219              		.cfi_def_cfa 11, 4
- 2220 0030 08D04DE2 		sub	sp, sp, #8
- 2221 0034 10000BE5 		str	r0, [fp, #-16]
+ 2784              		.loc 1 27 0
+ 2785              		.cfi_startproc
+ 2786              		@ Function supports interworking.
+ 2787              		@ args = 0, pretend = 0, frame = 8
+ 2788              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2789 0024 0DC0A0E1 		mov	ip, sp
+ 2790              	.LCFI2:
+ 2791              		.cfi_def_cfa_register 12
+ 2792 0028 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 2793 002c 04B04CE2 		sub	fp, ip, #4
+ 2794              		.cfi_offset 14, -8
+ 2795              		.cfi_offset 13, -12
+ 2796              		.cfi_offset 11, -16
+ 2797              	.LCFI3:
+ 2798              		.cfi_def_cfa 11, 4
+ 2799 0030 08D04DE2 		sub	sp, sp, #8
+ 2800 0034 10000BE5 		str	r0, [fp, #-16]
   28:../8led.c     **** 	/* muestra el Symbol[value] en el display (analogo al caso anterior) */
   29:../8led.c     **** 	if ((value >= 0) && (value < size_8led)) {
- 2222              		.loc 1 29 0
- 2223 0038 10301BE5 		ldr	r3, [fp, #-16]
- 2224 003c 000053E3 		cmp	r3, #0
- 2225 0040 080000BA 		blt	.L2
- 2226              		.loc 1 29 0 is_stmt 0 discriminator 1
- 2227 0044 10301BE5 		ldr	r3, [fp, #-16]
- 2228 0048 100053E3 		cmp	r3, #16
- 2229 004c 050000CA 		bgt	.L2
+ 2801              		.loc 1 29 0
+ 2802 0038 10301BE5 		ldr	r3, [fp, #-16]
+ 2803 003c 000053E3 		cmp	r3, #0
+ 2804 0040 080000BA 		blt	.L2
+ 2805              		.loc 1 29 0 is_stmt 0 discriminator 1
+ 2806 0044 10301BE5 		ldr	r3, [fp, #-16]
+ 2807 0048 100053E3 		cmp	r3, #16
+ 2808 004c 050000CA 		bgt	.L2
   30:../8led.c     **** 		LED8ADDR = (unsigned char) Symbol[value];
- 2230              		.loc 1 30 0 is_stmt 1
- 2231 0050 8537A0E3 		mov	r3, #34865152
- 2232 0054 18209FE5 		ldr	r2, .L4
- 2233 0058 10101BE5 		ldr	r1, [fp, #-16]
- 2234 005c 012192E7 		ldr	r2, [r2, r1, asl #2]
- 2235 0060 FF2002E2 		and	r2, r2, #255
- 2236 0064 0020C3E5 		strb	r2, [r3, #0]
- 2237              	.L2:
+ 2809              		.loc 1 30 0 is_stmt 1
+ 2810 0050 8537A0E3 		mov	r3, #34865152
+ 2811 0054 18209FE5 		ldr	r2, .L4
+ 2812 0058 10101BE5 		ldr	r1, [fp, #-16]
+ 2813 005c 012192E7 		ldr	r2, [r2, r1, asl #2]
+ 2814 0060 FF2002E2 		and	r2, r2, #255
+ 2815 0064 0020C3E5 		strb	r2, [r3, #0]
+ 2816              	.L2:
   31:../8led.c     **** 	}
   32:../8led.c     **** }
- 2238              		.loc 1 32 0
- 2239 0068 0CD04BE2 		sub	sp, fp, #12
- 2240 006c 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 2241 0070 1EFF2FE1 		bx	lr
- 2242              	.L5:
- 2243              		.align	2
- 2244              	.L4:
- 2245 0074 00000000 		.word	Symbol
- 2246              		.cfi_endproc
- 2247              	.LFE1:
- 2249              	.Letext0:
+ 2817              		.loc 1 32 0
+ 2818 0068 0CD04BE2 		sub	sp, fp, #12
+ 2819 006c 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 2820 0070 1EFF2FE1 		bx	lr
+ 2821              	.L5:
+ 2822              		.align	2
+ 2823              	.L4:
+ 2824 0074 00000000 		.word	Symbol
+ 2825              		.cfi_endproc
+ 2826              	.LFE1:
+ 2828              	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 8led.c
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2147   .data:00000000 $d
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2150   .data:00000000 Symbol
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2169   .text:00000000 $a
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2172   .text:00000000 D8Led_init
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2203   .text:00000024 D8Led_symbol
-C:\Users\Jorge\AppData\Local\Temp\ccvseBZq.s:2245   .text:00000074 $d
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2726   .data:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2729   .data:00000000 Symbol
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2748   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2751   .text:00000000 D8Led_init
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2782   .text:00000024 D8Led_symbol
+C:\Users\Jorge\AppData\Local\Temp\ccgkq07h.s:2824   .text:00000074 $d
                      .debug_frame:00000010 $d
 
 NO UNDEFINED SYMBOLS

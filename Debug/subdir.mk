@@ -9,6 +9,7 @@ C_SRCS += \
 ../cola.c \
 ../led.c \
 ../main.c \
+../sudoku_2024.c \
 ../timer.c 
 
 OBJS += \
@@ -17,6 +18,7 @@ OBJS += \
 ./cola.o \
 ./led.o \
 ./main.o \
+./sudoku_2024.o \
 ./timer.o 
 
 C_DEPS += \
@@ -25,6 +27,7 @@ C_DEPS += \
 ./cola.d \
 ./led.d \
 ./main.d \
+./sudoku_2024.d \
 ./timer.d 
 
 

@@ -9,9 +9,11 @@ Allocating common symbols
 Common symbol       size              file
 
 fileSize            0x4               ./common/44blib.o
+celdas_vacias       0x4               ./sudoku_2024.o
 button_id           0x4               ./button.o
 pila_debug          0x4b0             ./cola.o
 last_timer_value    0x4               ./button.o
+ready               0x4               ./sudoku_2024.o
 downPt              0x4               ./common/44blib.o
 
 Memory Configuration
@@ -28,6 +30,7 @@ LOAD ./button.o
 LOAD ./cola.o
 LOAD ./led.o
 LOAD ./main.o
+LOAD ./sudoku_2024.o
 LOAD ./timer.o
 START GROUP
 LOAD c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a
@@ -36,127 +39,143 @@ END GROUP
                 0x0c000000                . = 0xc000000
                 0x0c000000                Image_RO_Base = .
 
-.text           0x0c000000     0x19b4
+.text           0x0c000000     0x26cc
  *(.text)
- .text          0x0c000000      0x70c ./common/44binit.o
- .text          0x0c00070c      0x46c ./common/44blib.o
-                0x0c00070c                Delay
-                0x0c000844                DelayMs
-                0x0c0008a8                Port_Init
-                0x0c000a38                malloc
-                0x0c000ad8                free
-                0x0c000b08                sys_init
- .text          0x0c000b78       0x78 ./8led.o
-                0x0c000b78                D8Led_init
-                0x0c000b9c                D8Led_symbol
- .text          0x0c000bf0      0x1cc ./button.o
-                0x0c000bf0                Eint4567_ISR
-                0x0c000cdc                Eint4567_init
- .text          0x0c000dbc       0xf8 ./cola.o
-                0x0c000dbc                push_debug
- .text          0x0c000eb4      0x23c ./led.o
-                0x0c000eb4                leds_on
-                0x0c000ed4                leds_off
-                0x0c000ef4                led1_on
-                0x0c000f34                led1_off
-                0x0c000f74                led2_on
-                0x0c000fb4                led2_off
-                0x0c000ff4                leds_switch
-                0x0c001034                Led_Display
- .text          0x0c0010f0       0x2c ./main.o
-                0x0c0010f0                Main
- .text          0x0c00111c      0x74c ./timer.o
-                0x0c00111c                timer_ISR
-                0x0c001164                timer_init
-                0x0c001224                timer1_inicializar
-                0x0c001308                timer1_ISR
-                0x0c0015dc                timer1_empezar
-                0x0c001654                timer1_leer
-                0x0c0016b0                timer1_parar
-                0x0c0016ec                timer2_ISR
-                0x0c001780                timer2_init
- .text          0x0c001868      0x148 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
-                0x0c001868                __divsi3
-                0x0c001868                __aeabi_idiv
-                0x0c001990                __aeabi_idivmod
- .text          0x0c0019b0        0x4 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
-                0x0c0019b0                __aeabi_idiv0
-                0x0c0019b0                __aeabi_ldiv0
+ .text          0x0c000000      0x92c ./common/44binit.o
+                0x0c00070c                sudoku_candidatos_init_arm
+                0x0c0007ec                sudoku_candidatos_propagar_arm
+ .text          0x0c00092c      0x46c ./common/44blib.o
+                0x0c00092c                Delay
+                0x0c000a64                DelayMs
+                0x0c000ac8                Port_Init
+                0x0c000c58                malloc
+                0x0c000cf8                free
+                0x0c000d28                sys_init
+ .text          0x0c000d98       0x78 ./8led.o
+                0x0c000d98                D8Led_init
+                0x0c000dbc                D8Led_symbol
+ .text          0x0c000e10      0x1f0 ./button.o
+                0x0c000e10                Eint4567_ISR
+                0x0c000f20                Eint4567_init
+ .text          0x0c001000       0xf8 ./cola.o
+                0x0c001000                push_debug
+ .text          0x0c0010f8      0x23c ./led.o
+                0x0c0010f8                leds_on
+                0x0c001118                leds_off
+                0x0c001138                led1_on
+                0x0c001178                led1_off
+                0x0c0011b8                led2_on
+                0x0c0011f8                led2_off
+                0x0c001238                leds_switch
+                0x0c001278                Led_Display
+ .text          0x0c001334       0x30 ./main.o
+                0x0c001334                Main
+ .text          0x0c001364      0x808 ./sudoku_2024.o
+                0x0c001364                celda_poner_valor
+                0x0c0013dc                celda_leer_valor
+                0x0c001414                sudoku_candidatos_propagar_c
+                0x0c001734                sudoku_candidatos_init_c
+                0x0c001910                cuadricula_candidatos_verificar
+                0x0c001b2c                sudoku9x9
+ .text          0x0c001b6c      0xa14 ./timer.o
+                0x0c001b6c                timer_ISR
+                0x0c001bb4                timer_init
+                0x0c001c74                timer1_inicializar
+                0x0c001d58                timer1_ISR
+                0x0c0022f4                timer1_empezar
+                0x0c00236c                timer1_leer
+                0x0c0023c8                timer1_parar
+                0x0c002404                timer2_ISR
+                0x0c002498                timer2_init
+ .text          0x0c002580      0x148 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+                0x0c002580                __divsi3
+                0x0c002580                __aeabi_idiv
+                0x0c0026a8                __aeabi_idivmod
+ .text          0x0c0026c8        0x4 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
+                0x0c0026c8                __aeabi_idiv0
+                0x0c0026c8                __aeabi_ldiv0
 
-.glue_7         0x0c0019b4        0x0
+.glue_7         0x0c0026cc        0x0
  .glue_7        0x00000000        0x0 linker stubs
 
-.glue_7t        0x0c0019b4        0x0
+.glue_7t        0x0c0026cc        0x0
  .glue_7t       0x00000000        0x0 linker stubs
 
-.vfp11_veneer   0x0c0019b4        0x0
+.vfp11_veneer   0x0c0026cc        0x0
  .vfp11_veneer  0x00000000        0x0 linker stubs
 
-.v4_bx          0x0c0019b4        0x0
+.v4_bx          0x0c0026cc        0x0
  .v4_bx         0x00000000        0x0 linker stubs
-                0x0c0019b4                . = ALIGN (0x4)
-                0x0c0019b4                Image_RO_Limit = .
-                0x0c0019b4                Image_RW_Base = .
+                0x0c0026cc                . = ALIGN (0x4)
+                0x0c0026cc                Image_RO_Limit = .
+                0x0c0026cc                Image_RW_Base = .
 
-.data           0x0c0019b4       0x58
+.data           0x0c0026e0      0x190
  *(.data)
- .data          0x0c0019b4        0x6 ./common/44binit.o
-                0x0c0019b4                BDRAMTYPE
- *fill*         0x0c0019ba        0x2 00
- .data          0x0c0019bc        0xc ./common/44blib.o
-                0x0c0019bc                mallocPt
-                0x0c0019c0                run
- .data          0x0c0019c8       0x44 ./8led.o
- .data          0x0c001a0c        0x0 ./button.o
- .data          0x0c001a0c        0x0 ./cola.o
- .data          0x0c001a0c        0x0 ./led.o
- .data          0x0c001a0c        0x0 ./main.o
- .data          0x0c001a0c        0x0 ./timer.o
- .data          0x0c001a0c        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
- .data          0x0c001a0c        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
+ .data          0x0c0026e0      0x140 ./common/44binit.o
+                0x0c0026e0                BDRAMTYPE
+                0x0c002700                cuadricula
+ .data          0x0c002820        0xc ./common/44blib.o
+                0x0c002820                mallocPt
+                0x0c002824                run
+ .data          0x0c00282c       0x44 ./8led.o
+ .data          0x0c002870        0x0 ./button.o
+ .data          0x0c002870        0x0 ./cola.o
+ .data          0x0c002870        0x0 ./led.o
+ .data          0x0c002870        0x0 ./main.o
+ .data          0x0c002870        0x0 ./sudoku_2024.o
+ .data          0x0c002870        0x0 ./timer.o
+ .data          0x0c002870        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+ .data          0x0c002870        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
 
 .rodata
  *(.rodata)
-                0x0c001a0c                Image_RW_Limit = .
-                0x0c001a0c                . = ALIGN (0x4)
-                0x0c001a0c                Image_ZI_Base = .
+                0x0c002870                Image_RW_Limit = .
+                0x0c002870                . = ALIGN (0x4)
+                0x0c002870                Image_ZI_Base = .
 
-.bss            0x0c001a0c      0x4e4
+.bss            0x0c002870      0x4fc
  *(.bss)
- .bss           0x0c001a0c        0x0 ./common/44binit.o
- .bss           0x0c001a0c        0x4 ./common/44blib.o
-                0x0c001a0c                restart
- .bss           0x0c001a10        0x0 ./8led.o
- .bss           0x0c001a10        0xc ./button.o
-                0x0c001a10                led8_count
-                0x0c001a14                button_state
-                0x0c001a18                button_flag
- .bss           0x0c001a1c        0x4 ./cola.o
-                0x0c001a1c                indice_pila
- .bss           0x0c001a20        0x4 ./led.o
- .bss           0x0c001a24        0x4 ./main.o
-                0x0c001a24                switch_leds
- .bss           0x0c001a28        0x8 ./timer.o
-                0x0c001a28                timer1_num_int
-                0x0c001a2c                led_event_counter
- .bss           0x0c001a30        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
- .bss           0x0c001a30        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
- COMMON         0x0c001a30        0x8 ./common/44blib.o
-                0x0c001a30                fileSize
-                0x0c001a34                downPt
- COMMON         0x0c001a38        0x8 ./button.o
-                0x0c001a38                button_id
-                0x0c001a3c                last_timer_value
- COMMON         0x0c001a40      0x4b0 ./cola.o
-                0x0c001a40                pila_debug
-                0x0c001ef0                Image_ZI_Limit = .
-                0x0c001ef0                __bss_start__ = .
-                0x0c001ef0                __bss_end__ = .
-                0x0c001ef0                __EH_FRAME_BEGIN__ = .
-                0x0c001ef0                __EH_FRAME_END__ = .
-                0x0c001ef0                PROVIDE (__stack, .)
-                0x0c001ef0                end = .
-                0x0c001ef0                _end = .
+ .bss           0x0c002870        0x0 ./common/44binit.o
+ .bss           0x0c002870        0x4 ./common/44blib.o
+                0x0c002870                restart
+ .bss           0x0c002874        0x0 ./8led.o
+ .bss           0x0c002874        0xc ./button.o
+                0x0c002874                led8_count
+                0x0c002878                button_state
+                0x0c00287c                button_flag
+ .bss           0x0c002880        0x4 ./cola.o
+                0x0c002880                indice_pila
+ .bss           0x0c002884        0x4 ./led.o
+ .bss           0x0c002888        0x4 ./main.o
+                0x0c002888                switch_leds
+ .bss           0x0c00288c        0x8 ./sudoku_2024.o
+                0x0c00288c                sudoku_status
+                0x0c002890                errors
+ .bss           0x0c002894       0x10 ./timer.o
+                0x0c002894                timer1_num_int
+                0x0c002898                led_event_counter
+ .bss           0x0c0028a4        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+ .bss           0x0c0028a4        0x0 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
+ COMMON         0x0c0028a4        0x8 ./common/44blib.o
+                0x0c0028a4                fileSize
+                0x0c0028a8                downPt
+ COMMON         0x0c0028ac        0x8 ./button.o
+                0x0c0028ac                button_id
+                0x0c0028b0                last_timer_value
+ COMMON         0x0c0028b4      0x4b0 ./cola.o
+                0x0c0028b4                pila_debug
+ COMMON         0x0c002d64        0x8 ./sudoku_2024.o
+                0x0c002d64                celdas_vacias
+                0x0c002d68                ready
+                0x0c002d6c                Image_ZI_Limit = .
+                0x0c002d6c                __bss_start__ = .
+                0x0c002d6c                __bss_end__ = .
+                0x0c002d6c                __EH_FRAME_BEGIN__ = .
+                0x0c002d6c                __EH_FRAME_END__ = .
+                0x0c002d6c                PROVIDE (__stack, .)
+                0x0c002d6c                end = .
+                0x0c002d6c                _end = .
 
 .ARM.attributes
                 0x00000000       0x2e
@@ -175,11 +194,13 @@ END GROUP
  .ARM.attributes
                 0x0000011c       0x32 ./main.o
  .ARM.attributes
-                0x0000014e       0x32 ./timer.o
+                0x0000014e       0x32 ./sudoku_2024.o
  .ARM.attributes
-                0x00000180       0x1a c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+                0x00000180       0x32 ./timer.o
  .ARM.attributes
-                0x0000019a       0x18 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
+                0x000001b2       0x1a c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+ .ARM.attributes
+                0x000001cc       0x18 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_dvmd_tls.o)
 
 .comment        0x00000000       0x2a
  .comment       0x00000000       0x2a ./common/44blib.o
@@ -189,42 +210,46 @@ END GROUP
  .comment       0x00000000       0x2b ./cola.o
  .comment       0x00000000       0x2b ./led.o
  .comment       0x00000000       0x2b ./main.o
+ .comment       0x00000000       0x2b ./sudoku_2024.o
  .comment       0x00000000       0x2b ./timer.o
 
-.debug_info     0x00000000      0xb40
+.debug_info     0x00000000     0x116e
  *(.debug_info)
  .debug_info    0x00000000       0x6f ./common/44binit.o
- .debug_info    0x0000006f      0x229 ./common/44blib.o
- .debug_info    0x00000298      0x145 ./8led.o
- .debug_info    0x000003dd      0x167 ./button.o
- .debug_info    0x00000544      0x14b ./cola.o
- .debug_info    0x0000068f      0x135 ./led.o
- .debug_info    0x000007c4       0x97 ./main.o
- .debug_info    0x0000085b      0x2e5 ./timer.o
+ .debug_info    0x0000006f      0x23e ./common/44blib.o
+ .debug_info    0x000002ad      0x15a ./8led.o
+ .debug_info    0x00000407      0x1d3 ./button.o
+ .debug_info    0x000005da      0x14b ./cola.o
+ .debug_info    0x00000725      0x14a ./led.o
+ .debug_info    0x0000086f       0xac ./main.o
+ .debug_info    0x0000091b      0x495 ./sudoku_2024.o
+ .debug_info    0x00000db0      0x3be ./timer.o
 
-.debug_line     0x00000000     0x116d
+.debug_line     0x00000000     0x17a3
  *(.debug_line)
- .debug_line    0x00000000      0x10f ./common/44binit.o
- .debug_line    0x0000010f      0x3f8 ./common/44blib.o
- .debug_line    0x00000507      0x1f1 ./8led.o
- .debug_line    0x000006f8      0x247 ./button.o
- .debug_line    0x0000093f      0x178 ./cola.o
- .debug_line    0x00000ab7      0x204 ./led.o
- .debug_line    0x00000cbb      0x238 ./main.o
- .debug_line    0x00000ef3      0x27a ./timer.o
+ .debug_line    0x00000000      0x19e ./common/44binit.o
+ .debug_line    0x0000019e      0x417 ./common/44blib.o
+ .debug_line    0x000005b5      0x21c ./8led.o
+ .debug_line    0x000007d1      0x288 ./button.o
+ .debug_line    0x00000a59      0x178 ./cola.o
+ .debug_line    0x00000bd1      0x22f ./led.o
+ .debug_line    0x00000e00      0x267 ./main.o
+ .debug_line    0x00001067      0x449 ./sudoku_2024.o
+ .debug_line    0x000014b0      0x2f3 ./timer.o
 
-.debug_abbrev   0x00000000      0x532
+.debug_abbrev   0x00000000      0x6ed
  *(.debug_abbrev)
  .debug_abbrev  0x00000000       0x14 ./common/44binit.o
- .debug_abbrev  0x00000014      0x11f ./common/44blib.o
- .debug_abbrev  0x00000133       0xa7 ./8led.o
- .debug_abbrev  0x000001da       0xc3 ./button.o
- .debug_abbrev  0x0000029d       0xaf ./cola.o
- .debug_abbrev  0x0000034c       0x74 ./led.o
- .debug_abbrev  0x000003c0       0x52 ./main.o
- .debug_abbrev  0x00000412      0x120 ./timer.o
+ .debug_abbrev  0x00000014      0x135 ./common/44blib.o
+ .debug_abbrev  0x00000149       0xa7 ./8led.o
+ .debug_abbrev  0x000001f0       0xc3 ./button.o
+ .debug_abbrev  0x000002b3       0xaf ./cola.o
+ .debug_abbrev  0x00000362       0x8a ./led.o
+ .debug_abbrev  0x000003ec       0x68 ./main.o
+ .debug_abbrev  0x00000454      0x12a ./sudoku_2024.o
+ .debug_abbrev  0x0000057e      0x16f ./timer.o
 
-.debug_frame    0x00000000      0x46c
+.debug_frame    0x00000000      0x55c
  *(.debug_frame)
  .debug_frame   0x00000000       0xd0 ./common/44blib.o
  .debug_frame   0x000000d0       0x50 ./8led.o
@@ -232,11 +257,12 @@ END GROUP
  .debug_frame   0x00000184       0x30 ./cola.o
  .debug_frame   0x000001b4      0x110 ./led.o
  .debug_frame   0x000002c4       0x30 ./main.o
- .debug_frame   0x000002f4      0x158 ./timer.o
- .debug_frame   0x0000044c       0x20 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
+ .debug_frame   0x000002f4       0xf0 ./sudoku_2024.o
+ .debug_frame   0x000003e4      0x158 ./timer.o
+ .debug_frame   0x0000053c       0x20 c:/users/jorge/downloads/eclipsearm/sourcery-g++-lite-arm-2011.03/bin/../lib/gcc/arm-none-eabi/4.5.2\libgcc.a(_divsi3.o)
 OUTPUT(Practica_2_PH.elf elf32-littlearm)
 
-.debug_aranges  0x00000000      0x100
+.debug_aranges  0x00000000      0x120
  .debug_aranges
                 0x00000000       0x20 ./common/44binit.o
  .debug_aranges
@@ -252,35 +278,40 @@ OUTPUT(Practica_2_PH.elf elf32-littlearm)
  .debug_aranges
                 0x000000c0       0x20 ./main.o
  .debug_aranges
-                0x000000e0       0x20 ./timer.o
+                0x000000e0       0x20 ./sudoku_2024.o
+ .debug_aranges
+                0x00000100       0x20 ./timer.o
 
-.debug_macinfo  0x00000000    0x27b9f
+.debug_macinfo  0x00000000    0x34532
  .debug_macinfo
-                0x00000000     0x8c67 ./common/44blib.o
+                0x00000000     0x9c32 ./common/44blib.o
  .debug_macinfo
-                0x00008c67     0x5a16 ./8led.o
+                0x00009c32     0x6af2 ./8led.o
  .debug_macinfo
-                0x0000e67d     0x5c00 ./button.o
+                0x00010724     0x6ce0 ./button.o
  .debug_macinfo
-                0x0001427d     0x2a35 ./cola.o
+                0x00017404     0x2a35 ./cola.o
  .debug_macinfo
-                0x00016cb2     0x5a15 ./led.o
+                0x00019e39     0x6af1 ./led.o
  .debug_macinfo
-                0x0001c6c7     0x5a8d ./main.o
+                0x0002092a     0x6b69 ./main.o
  .debug_macinfo
-                0x00022154     0x5a4b ./timer.o
+                0x00027493     0x6574 ./sudoku_2024.o
+ .debug_macinfo
+                0x0002da07     0x6b2b ./timer.o
 
-.debug_loc      0x00000000      0x4fc
+.debug_loc      0x00000000      0x630
  .debug_loc     0x00000000      0x108 ./common/44blib.o
  .debug_loc     0x00000108       0x58 ./8led.o
  .debug_loc     0x00000160       0x58 ./button.o
  .debug_loc     0x000001b8       0x2c ./cola.o
  .debug_loc     0x000001e4      0x160 ./led.o
  .debug_loc     0x00000344       0x2c ./main.o
- .debug_loc     0x00000370      0x18c ./timer.o
+ .debug_loc     0x00000370      0x134 ./sudoku_2024.o
+ .debug_loc     0x000004a4      0x18c ./timer.o
 
 .debug_pubnames
-                0x00000000      0x313
+                0x00000000      0x3f9
  .debug_pubnames
                 0x00000000       0x90 ./common/44blib.o
  .debug_pubnames
@@ -294,37 +325,43 @@ OUTPUT(Practica_2_PH.elf elf32-littlearm)
  .debug_pubnames
                 0x00000207       0x2b ./main.o
  .debug_pubnames
-                0x00000232       0xe1 ./timer.o
+                0x00000232       0xe6 ./sudoku_2024.o
+ .debug_pubnames
+                0x00000318       0xe1 ./timer.o
 
 .debug_pubtypes
-                0x00000000       0xbb
+                0x00000000      0x13a
  .debug_pubtypes
                 0x00000000       0x12 ./common/44blib.o
  .debug_pubtypes
                 0x00000012       0x12 ./8led.o
  .debug_pubtypes
-                0x00000024       0x22 ./button.o
+                0x00000024       0x33 ./button.o
  .debug_pubtypes
-                0x00000046       0x2f ./cola.o
+                0x00000057       0x2f ./cola.o
  .debug_pubtypes
-                0x00000075       0x12 ./led.o
+                0x00000086       0x12 ./led.o
  .debug_pubtypes
-                0x00000087       0x12 ./main.o
+                0x00000098       0x12 ./main.o
  .debug_pubtypes
-                0x00000099       0x22 ./timer.o
+                0x000000aa       0x46 ./sudoku_2024.o
+ .debug_pubtypes
+                0x000000f0       0x4a ./timer.o
 
-.debug_str      0x00000000      0x3cf
- .debug_str     0x00000000      0x129 ./common/44blib.o
-                                0x167 (size before relaxing)
- .debug_str     0x00000129       0x66 ./8led.o
-                                0x12c (size before relaxing)
- .debug_str     0x0000018f       0xa1 ./button.o
-                                0x161 (size before relaxing)
- .debug_str     0x00000230       0x69 ./cola.o
+.debug_str      0x00000000      0x5aa
+ .debug_str     0x00000000      0x140 ./common/44blib.o
+                                0x17e (size before relaxing)
+ .debug_str     0x00000140       0x66 ./8led.o
+                                0x143 (size before relaxing)
+ .debug_str     0x000001a6      0x100 ./button.o
+                                0x1df (size before relaxing)
+ .debug_str     0x000002a6       0x69 ./cola.o
                                 0x129 (size before relaxing)
- .debug_str     0x00000299       0x68 ./led.o
-                                0x128 (size before relaxing)
- .debug_str     0x00000301       0x1b ./main.o
-                                 0xdb (size before relaxing)
- .debug_str     0x0000031c       0xb3 ./timer.o
-                                0x222 (size before relaxing)
+ .debug_str     0x0000030f       0x68 ./led.o
+                                0x13f (size before relaxing)
+ .debug_str     0x00000377       0x1b ./main.o
+                                 0xf2 (size before relaxing)
+ .debug_str     0x00000392      0x148 ./sudoku_2024.o
+                                0x291 (size before relaxing)
+ .debug_str     0x000004da       0xd0 ./timer.o
+                                0x2d7 (size before relaxing)

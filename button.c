@@ -6,14 +6,16 @@
 #include "def.h"
 #include "button.h"
 #include "cola.h"
+#include "sudoku_2024.h"
 
 /*--- Variables globales ---*/
 volatile int led8_count = 0;
 
 volatile int button_id;
-
 volatile unsigned int last_timer_value;
 volatile ButtonState button_state = WAITING;
+
+// Flags para los estados del sudoku
 volatile int button_flag = 0;
 
 /* Declaración de función para ISR de Eint4567 */
@@ -38,8 +40,13 @@ void Eint4567_ISR(void)
     break;
   }
 
+  if (sudoku_status == NOT_STARTED)
+  {
+    sudoku_status = STARTED;
+  }
+
   button_flag = 1;
-  rI_ISPC |= BIT_EINT4567;
+  rI_ISPC |= BIT_EINT4567; // Limpiar interrupción de EINT4567
 }
 
 void Eint4567_init(void)

@@ -750,7 +750,315 @@
  464              	.equ	HandleEINT1,	_ISR_STARTADDRESS+4*32
  465              	.equ	HandleEINT0,	_ISR_STARTADDRESS+4*33		/* 0xc1(c7)fff84 */
  466              	
- 467              			.end
+ 467              	.global sudoku_candidatos_propagar_arm
+ 468              	.global sudoku_candidatos_init_arm
+ 469              	
+ 470              	################################################################################
+ 471              	.arm
+ 472              	sudoku_candidatos_init_arm:
+ 473              	    @ r0 = cuadricula
+ 474              	    @ r1 = fila
+ 475              	    @ r2 = columna
+ 476              	    @ r3 = valor actual
+ 477              	    @ r4 = desplazamiento fila
+ 478              	    @ r5 = desplazamiento columna
+ 479              	    @ r6 = 0x1FF0 lista de candidatos
+ 480              	    @ r7 = desplazamiento total
+ 481              	
+ 482 070c 0190A0E1 		MOV r9, r1						@ r9 = version propagar (C=0, ARM=1, THUMB=2)
+ 483              	
+ 484 0710 0010A0E3 	    MOV r1, #0
+ 485 0714 1F6CA0E3 	    MOV r6, #0x1F00               	@ Cargar parte alta de (0x1F00)
+ 486 0718 F06086E3 	    ORR r6, r6, #0x00F0           	@ Combinar parte baja (0x00F0) para obtener 0x1FF0
+ 487              	
+ 488              	init_fila:
+ 489 071c 090051E3 	    CMP r1, #9
+ 490 0720 0F0000AA 	    BGE fin_init
+ 491              	
+ 492 0724 8142A0E1 	    LSL r4, r1, #5					@ Desplazamiento a siguiente fila (r1 * 32 bytes)
+ 493              	
+ 494 0728 0020A0E3 	    MOV r2, #0
+ 495              	init_columna:
+ 496 072c 090052E3 	    CMP r2, #9
+ 497 0730 090000AA 	    BGE fin_init_columna
+ 498              	
+ 499 0734 8250A0E1 	    LSL r5, r2, #1					@ Desplazamiento a siguiente columna (r2 * 2 bytes)
+ 500              	
+ 501 0738 057084E0 	    ADD r7, r4, r5        			@ Desplazamiento total (fila + columna)
+ 502              	
+ 503 073c B73090E1 	    LDRH r3, [r0, r7]
+ 504              	
+ 505 0740 028903E2 	   	AND r8, r3, #0x8000				@ Objeter valor de la pista
+ 506 0744 020958E3 		CMP r8, #0x8000					@ Si pista == 1 se omite la inicializacion de candidatos
+ 507 0748 010000AA 	    BGE skip_init
+ 508              	
+ 509 074c 063083E1 	    ORR r3, r3, r6        			@ celda |= 0x1FF0 - Activar todos los candidatos
+ 510 0750 B73080E1 	    STRH r3, [r0, r7]
+ 511              	
+ 512              	skip_init:
+ 513 0754 012082E2 	    ADD r2, r2, #1
+ 514 0758 F3FFFFEA 	    B init_columna
+ 515              	
+ 516              	fin_init_columna:
+ 517 075c 011081E2 	    ADD r1, r1, #1
+ 518 0760 EDFFFFEA 	    B init_fila
+ 519              	
+ 520              	fin_init:
+ 521              	
+ 522              	@ Recorrer la cuadricula para llamar a las versiones de propagar
+ 523              	
+ 524 0764 00A0A0E3 		MOV r10, #0							@ Contador de celdas vacias
+ 525 0768 0010A0E3 		MOV r1, #0
+ 526              	fila_cuadricula:
+ 527 076c 090051E3 		CMP r1, #9
+ 528 0770 1B0000AA 		BGE fin_cuadricula
+ 529              	
+ 530 0774 8142A0E1 		LSL r4, r1, #5
+ 531              	
+ 532 0778 0020A0E3 		MOV r2, #0
+ 533              	recorrer_columna:
+ 534 077c 090052E3 		CMP r2, #9
+ 535 0780 150000AA 		BGE siguiente_fila
+ 536              	
+ 537 0784 8260A0E1 		LSL r6, r2, #1
+ 538              	
+ 539 0788 067084E0 		ADD r7, r4, r6
+ 540              	
+ 541 078c B73090E1 		LDRH r3, [r0, r7]
+ 542              	
+ 543 0790 0F3003E2 		AND r3, r3, #0xF				@celda_leer_valor()
+ 544 0794 000053E3 		CMP r3, #0
+ 545 0798 0300000A 		BEQ skip_propagation
+ 546              	
+ 547 079c 000059E3 		CMP r9, #0
+ 548 07a0 0300000A 		BEQ propagar_C
+ 549              	
+ 550 07a4 010059E3 		CMP r9, #1
+ 551 07a8 0500000A 		BEQ propagar_ARM
+ 552              	skip_propagation:
+ 553 07ac 01A08AE2 		ADD r10, r10, #1
+ 554 07b0 070000EA 		B final_columna
+ 555              	propagar_C:
+ 556 07b4 FF5F2DE8 		STMED SP!, {r0-r12, r14}
+ 557 07b8 FEFFFFEB 		BL sudoku_candidatos_propagar_c
+ 558 07bc FF5FBDE9 		LDMED SP!, {r0-r12, r14}
+ 559 07c0 030000EA 		B final_columna
+ 560              	propagar_ARM:
+ 561 07c4 FF5F2DE8 		STMED SP!, {r0-r12, r14}
+ 562 07c8 FEFFFFEB 		BL sudoku_candidatos_propagar_arm
+ 563 07cc FF5FBDE9 		LDMED SP!, {r0-r12, r14}
+ 564 07d0 FFFFFFEA 		B final_columna
+ 565              	#propagar_THUMB:
+ 566              	#	BL sudoku_candidatos_propagar_arm
+ 567              	#	B final_columna
+ 568              	final_columna:
+ 569 07d4 012082E2 		ADD r2, r2, #1
+ 570 07d8 E7FFFFEA 		B recorrer_columna
+ 571              	siguiente_fila:
+ 572 07dc 011081E2 		ADD r1, r1, #1
+ 573 07e0 E1FFFFEA 		B fila_cuadricula
+ 574              	fin_cuadricula:
+ 575 07e4 0A00A0E1 		MOV r0, r10
+ 576 07e8 1EFF2FE1 	  	BX lr
+ 577              	
+ 578              	
+ 579              	@ Calcula el desplazamiento necesario para llegar a la celda, y llama a las funciones de propagacio
+ 580              	sudoku_candidatos_propagar_arm:
+ 581 07ec 00582DE9 		STMFD sp!, {r11, r12, lr}
+ 582              		@ r0 = cuadricula
+ 583              		@ r1 = indice fila
+ 584              		@ r2 = indice columna
+ 585              		@ r3 = valor actual celda
+ 586              		@ r4 = desplazamiento de la fila
+ 587              		@ r5 = desplazamiento de la columna
+ 588              		@ r6 = bit desplazado (se usara para desactivar los candidatos)
+ 589              		@ r7 = desplazamiento total (r4 + r5)
+ 590              	
+ 591 07f0 8142A0E1 		LSL r4, r1, #5							@ Desplazamiento fila (r1 * 32 bytes)
+ 592              	
+ 593 07f4 8250A0E1 		LSL r5, r2, #1							@ Desplazamiento columna (r2 * 2 bytes)
+ 594              	
+ 595 07f8 057084E0 		ADD r7, r4, r5							@ Desplazamiento total (fila + columna)
+ 596              	
+ 597 07fc 038083E2 		ADD r8, r3, #3							@ r8 = displace = (3 + r3)
+ 598              	
+ 599 0800 0160A0E3 		MOV r6, #1
+ 600 0804 1668A0E1 		LSL r6, r6, r8							@ desplazar bit a la izquierda r8 posiciones
+ 601              	
+ 602 0808 B78090E1 		LDRH r8, [r0, r7]
+ 603              	
+ 604              	@ Actualiza los candidatos de la fila (verticalmente)
+ 605 080c 0090A0E3 		MOV r9, #0
+ 606              	fila_loop:
+ 607 0810 090059E3 	    CMP r9, #9
+ 608 0814 0B0000AA 	    BGE fin_fila
+ 609              	
+ 610 0818 89A2A0E1 	    LSL r10, r9, #5               			@ Desplazar la fila (r9 * 32)
+ 611 081c 05B08AE0 	    ADD r11, r10, r5               			@ r11 = desplazamiento total = fila + columna (columna fija p
+ 612              	
+ 613 0820 BB8090E1 	    LDRH r8, [r0, r11]
+ 614              	
+ 615 0824 02C908E2 	    AND r12, r8, #0x8000
+ 616 0828 02095CE3 	    CMP r12, #0x8000
+ 617 082c 0300000A 	    BEQ skip_row
+ 618              	
+ 619 0830 010059E1 	    CMP r9, r1
+ 620 0834 0100000A 	    BEQ skip_row
+ 621              	
+ 622 0838 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar el bit candidato
+ 623 083c BB8080E1 	    STRH r8, [r0, r11]
+ 624              	skip_row:
+ 625 0840 019089E2 	    ADD r9, r9, #1
+ 626 0844 F1FFFFEA 	    B fila_loop
+ 627              	fin_fila:
+ 628              	@ Actualiza los candidatos de la columna (Horizontalmente)
+ 629 0848 0090A0E3 		MOV r9, #0
+ 630              	col_loop:
+ 631 084c 090059E3 	    CMP r9, #9
+ 632 0850 0B0000AA 	    BGE fin_col
+ 633              	
+ 634 0854 89A0A0E1 	    LSL r10, r9, #1               			@ Desplazar la columna (r9 * 2)
+ 635 0858 0AB084E0 	    ADD r11, r4, r10               			@ r11 = desplazamiento total = fila + columna (fila fija para
+ 636              	
+ 637 085c BB8090E1 	    LDRH r8, [r0, r11]
+ 638              	
+ 639 0860 02C908E2 	    AND r12, r8, #0x8000
+ 640 0864 02095CE3 	    CMP r12, #0x8000
+ 641 0868 0300000A 	    BEQ skip_column
+ 642              	
+ 643 086c 020059E1 	    CMP r9, r2
+ 644 0870 0100000A 	    BEQ skip_column
+ 645              	
+ 646 0874 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar bit candidato
+ 647 0878 BB8080E1 	    STRH r8, [r0, r11]
+ 648              	skip_column:
+ 649 087c 019089E2 	    ADD r9, r9, #1
+ 650 0880 F1FFFFEA 	    B col_loop
+ 651              	fin_col:
+ 652              	@ Calcula el limite inferior (esquina superior izquierda) y limite superior de la region 3x3 corres
+ 653 0884 0180A0E1 		MOV r8, r1
+ 654 0888 0090A0E3 		MOV r9, #0
+ 655              	row_index:
+ 656 088c 030058E3 		CMP r8, #3
+ 657 0890 020000BA 		BLT row_index_end						@ Si es menor a 3, termina el calculo de fila
+ 658              	
+ 659 0894 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region v
+ 660 0898 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+ 661 089c FAFFFFEA 		B row_index
+ 662              	row_index_end:
+ 663 08a0 0970A0E1 		MOV r7, r9								@ Guardar el indice calculado en r8 (fila)
+ 664              	
+ 665 08a4 0280A0E1 		MOV r8, r2
+ 666 08a8 0090A0E3 		MOV r9, #0
+ 667              	col_index:
+ 668 08ac 030058E3 		CMP r8, #3
+ 669 08b0 020000BA 		BLT col_index_end						@ Si es menor a 3, termina el calculo de columna
+ 670              	
+ 671 08b4 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region h
+ 672 08b8 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+ 673 08bc FAFFFFEA 		B col_index
+ 674              	col_index_end:
+ 675 08c0 0980A0E1 		MOV r8, r9								@ Guardar el indice calculado en r7 (columna)
+ 676              	
+ 677 08c4 039087E2 		ADD r9, r7, #3							@ r9 = Limite superior de la fila
+ 678 08c8 03A088E2 		ADD r10, r8, #3							@ r10 = Limite superior de la columna
+ 679              	@ Actualiza los candidatos de la region 3x3
+ 680              	region_row_loop:
+ 681 08cc 090057E1 		CMP r7, r9
+ 682 08d0 130000AA 		BGE end_of_region
+ 683              	region_col_loop:
+ 684 08d4 0A0058E1 		CMP r8, r10
+ 685 08d8 0E0000AA 		BGE end_of_column
+ 686              	
+ 687 08dc 8742A0E1 		LSL r4, r7, #5							@ Desplazamiento fila (r7 * 32)
+ 688 08e0 8850A0E1 		LSL r5, r8, #1							@ Desplazamiento columna (r10 * 2)
+ 689 08e4 05B084E0 		ADD r11, r4, r5							@ Desplazamiento total de la celda (fila + columna)
+ 690              	
+ 691 08e8 BBC090E1 		LDRH r12, [r0, r11]
+ 692              	
+ 693 08ec 02490CE2 		AND r4, r12, #0x8000
+ 694 08f0 020954E3 		CMP r4, #0x8000
+ 695 08f4 0500000A 		BEQ skip_cell
+ 696              	
+ 697 08f8 010057E1 		CMP r7, r1
+ 698 08fc 0300000A 		BEQ skip_cell
+ 699              	
+ 700 0900 020058E1 		CMP r8, r2
+ 701 0904 0100000A 		BEQ skip_cell
+ 702              	
+ 703 0908 06C0CCE1 		BIC r12, r12, r6						@ celda &= ~(1 << displace) - Actualizar bit candidato
+ 704 090c BBC080E1 		STRH r12, [r0, r11]
+ 705              	skip_cell:
+ 706 0910 018088E2 		ADD r8, r8, #1
+ 707 0914 EEFFFFEA 		B region_col_loop
+ 708              	end_of_column:
+ 709 0918 017087E2 		ADD r7, r7, #1
+ 710 091c 038048E2 		SUB r8, r8, #3						@ Regresar a la primera columa de la región
+ 711 0920 E9FFFFEA 		B region_row_loop
+ 712              	end_of_region:
+ 713 0924 0058BDE8 		LDMFD sp!, {r11, r12, lr}
+ 714 0928 1EFF2FE1 		BX lr
+ 715              	
+ 716              	################################################################################
+ 717              	.data
+ 718              	.ltorg
+ 719 0006 00000000 	.align 5    /* guarantees 32-byte alignment (2^5) */
+ 719      00000000 
+ 719      00000000 
+ 719      00000000 
+ 719      00000000 
+ 720              	
+ 721              	# huecos para cuadrar
+ 722              	.global cuadricula
+ 723              	
+ 724              	cuadricula:
+ 725              	     /* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
+ 726 0020 05800000 	    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0, 0,0,0,0,0,0
+ 726      00000380 
+ 726      00000000 
+ 726      00000000 
+ 726      00000000 
+ 727 0040 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x8009,0x0000,0x0000,0x0000,0x8005,0,0,0,0,0,0,0
+ 727      00000000 
+ 727      09800000 
+ 727      00000000 
+ 727      05800000 
+ 728 0060 00000980 	    .hword   0x0000,0x8009,0x8006,0x8007,0x0000,0x8005,0x0000,0x8003,0x0000,0,0,0,0,0,0,0
+ 728      06800780 
+ 728      00000580 
+ 728      00000380 
+ 728      00000000 
+ 729 0080 00000880 	    .hword   0x0000,0x8008,0x0000,0x8009,0x0000,0x0000,0x8006,0x0000,0x0000,0,0,0,0,0,0,0
+ 729      00000980 
+ 729      00000000 
+ 729      06800000 
+ 729      00000000 
+ 730 00a0 00000000 	    .hword   0x0000,0x0000,0x8005,0x8008,0x8006,0x8001,0x8004,0x0000,0x0000,0,0,0,0,0,0,0
+ 730      05800880 
+ 730      06800180 
+ 730      04800000 
+ 730      00000000 
+ 731 00c0 00000000 	    .hword   0x0000,0x0000,0x8004,0x8002,0x0000,0x8003,0x0000,0x8007,0x0000,0,0,0,0,0,0,0
+ 731      04800280 
+ 731      00000380 
+ 731      00000780 
+ 731      00000000 
+ 732 00e0 00000780 	    .hword   0x0000,0x8007,0x0000,0x8005,0x0000,0x8009,0x8002,0x8006,0x0000,0,0,0,0,0,0,0
+ 732      00000580 
+ 732      00000980 
+ 732      02800680 
+ 732      00000000 
+ 733 0100 06800000 	    .hword   0x8006,0x0000,0x0000,0x0000,0x8008,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 733      00000000 
+ 733      08800000 
+ 733      00000000 
+ 733      00000000 
+ 734 0120 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x8002,0x0000,0x0000,0x8001,0,0,0,0,0,0,0
+ 734      00000000 
+ 734      00000280 
+ 734      00000000 
+ 734      01800000 
+ 735              	.end
 DEFINED SYMBOLS
 C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/option.a:9      *ABS*:0c7fff00 _ISR_STARTADDRESS
                             *ABS*:00000010 BUSWIDTH
@@ -938,6 +1246,39 @@ C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/memcfg.a:114    *ABS*:00000459 
 ../common/44binit.asm:420    *ABS*:0c7ff000 UserStack
 ../common/44binit.asm:427    *ABS*:0c7fff00 HandleReset
 ../common/44binit.asm:432    *ABS*:0c7fff14 HandleReserved
+../common/44binit.asm:580    .text:000007ec sudoku_candidatos_propagar_arm
+../common/44binit.asm:472    .text:0000070c sudoku_candidatos_init_arm
+../common/44binit.asm:482    .text:0000070c $a
+../common/44binit.asm:488    .text:0000071c init_fila
+../common/44binit.asm:520    .text:00000764 fin_init
+../common/44binit.asm:495    .text:0000072c init_columna
+../common/44binit.asm:516    .text:0000075c fin_init_columna
+../common/44binit.asm:512    .text:00000754 skip_init
+../common/44binit.asm:526    .text:0000076c fila_cuadricula
+../common/44binit.asm:574    .text:000007e4 fin_cuadricula
+../common/44binit.asm:533    .text:0000077c recorrer_columna
+../common/44binit.asm:571    .text:000007dc siguiente_fila
+../common/44binit.asm:552    .text:000007ac skip_propagation
+../common/44binit.asm:555    .text:000007b4 propagar_C
+../common/44binit.asm:560    .text:000007c4 propagar_ARM
+../common/44binit.asm:568    .text:000007d4 final_columna
+../common/44binit.asm:606    .text:00000810 fila_loop
+../common/44binit.asm:627    .text:00000848 fin_fila
+../common/44binit.asm:624    .text:00000840 skip_row
+../common/44binit.asm:630    .text:0000084c col_loop
+../common/44binit.asm:651    .text:00000884 fin_col
+../common/44binit.asm:648    .text:0000087c skip_column
+../common/44binit.asm:655    .text:0000088c row_index
+../common/44binit.asm:662    .text:000008a0 row_index_end
+../common/44binit.asm:667    .text:000008ac col_index
+../common/44binit.asm:674    .text:000008c0 col_index_end
+../common/44binit.asm:680    .text:000008cc region_row_loop
+../common/44binit.asm:712    .text:00000924 end_of_region
+../common/44binit.asm:683    .text:000008d4 region_col_loop
+../common/44binit.asm:708    .text:00000918 end_of_column
+../common/44binit.asm:705    .text:00000910 skip_cell
+../common/44binit.asm:719    .data:00000006 $d
+../common/44binit.asm:724    .data:00000020 cuadricula
                    .debug_aranges:0000000c $d
 
 UNDEFINED SYMBOLS
@@ -946,3 +1287,4 @@ Image_RW_Base
 Image_ZI_Base
 Image_ZI_Limit
 Main
+sudoku_candidatos_propagar_c

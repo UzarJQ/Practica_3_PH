@@ -10,11 +10,15 @@
 #include "44b.h"
 #include "44blib.h"
 #include "eventos.h"
+#include "sudoku_2024.h"
 
 /*--- variables globales ---*/
 extern int switch_leds;
 int timer1_num_int = 0; // Contador de periodos completos por el timer1
 volatile int led_event_counter = 0;
+extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
+static int selected_row = 0;
+static int selected_column = 0;
 
 /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
 https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -42,10 +46,10 @@ void timer_init(void)
 	pISR_TIMER0 = (unsigned)timer_ISR;
 
 	/* Configura el Timer0 */
-	rTCFG0 = 255;		// ajusta el preescalado
-	rTCFG1 = 0x0;		// selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
-	rTCNTB0 = 6250; // valor inicial de cuenta (la cuenta es descendente)
-	rTCMPB0 = 0;		// valor de comparaci�n
+	rTCFG0 = 255;		 // ajusta el preescalado
+	rTCFG1 = 0x0;		 // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
+	rTCNTB0 = 65535; // valor inicial de cuenta (la cuenta es descendente)
+	rTCMPB0 = 12800; // valor de comparaci�n
 	/* establecer update=manual (bit 1) + inverter=on (�? ser� inverter off un cero en el bit 2 pone el inverter en off)*/
 	rTCON = 0x2;
 	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
@@ -75,7 +79,6 @@ void timer1_inicializar(void)
 void timer1_ISR(void)
 {
 	timer1_num_int++; // Incrementar el contador de ciclos completos
-
 	// Máquina de estados
 	switch (button_state)
 	{
@@ -84,23 +87,102 @@ void timer1_ISR(void)
 		{
 			button_state = PRESSED;
 			last_timer_value = timer1_leer();
-			button_flag = 0; // Reiniciar la bandera
+			button_flag = 0;
 		}
 		break;
 
 	case PRESSED:
 		if ((timer1_leer() - last_timer_value) > 272016) // TRP
 		{
-			if (!(rPDATG & 0x40)) // Incrementar si botón 6
+
+			switch (sudoku_status)
 			{
-				led8_count++;
-			}
-			else if (!(rPDATG & 0x80)) // Decrementar si botón 7
-			{
-				led8_count--;
+			case NOT_STARTED:
+				break;
+			case STARTED:
+				sudoku_candidatos_init_c(cuadricula, 0);
+				led8_count = 15;
+				sudoku_status = ROW_SELECTION;
+				break;
+			case ROW_SELECTION:
+				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+				{
+					led8_count++;
+
+					if (led8_count > 9)
+					{
+						led8_count = 1;
+					}
+				}
+
+				if (!(rPDATG & 0x80))
+				{
+					selected_row = led8_count - 1; // Se resta uno para que el índice sea correcto (empezamos en 0)
+					led8_count = 12;
+					sudoku_status = COLUMN_SELECTION;
+				}
+				break;
+			case COLUMN_SELECTION:
+				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+				{
+					led8_count++;
+
+					if (led8_count > 9)
+					{
+						led8_count = 1;
+					}
+				}
+
+				if (!(rPDATG & 0x80))
+				{
+					selected_column = led8_count - 1; // Se resta uno para que el índice sea correcto (empezamos en 0)
+
+					if (cuadricula[selected_row][selected_column] & 0x8000) // comprobar si la celda es una pista
+					{
+						sudoku_status = ROW_SELECTION;
+						led8_count = 15;
+					}
+					else
+					{
+						sudoku_status = VALUE_SELECTION;
+						led8_count = 0;
+					}
+				}
+				break;
+			case VALUE_SELECTION:
+				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+				{
+					led8_count++;
+					if (led8_count > 9)
+					{
+						led8_count = 0;
+					}
+				}
+
+				if (!(rPDATG & 0x80))
+				{
+					celda_poner_valor(&cuadricula[selected_row][selected_column], led8_count);
+					cuadricula_candidatos_verificar(cuadricula, selected_row, selected_column);
+
+					if (cuadricula[selected_row][selected_column] & 0x4000) // Comprobar si hay errores
+					{
+						led8_count = 14; // Indicar error con una E en el 8led
+					}
+					else // Si no hay errores, propagar el valor de la celda
+					{
+						sudoku_candidatos_propagar_c(cuadricula, selected_row, selected_column, led8_count);
+
+						led8_count = 15;
+						sudoku_status = ROW_SELECTION;
+					}
+				}
+
+				break;
+			default:
+				break;
 			}
 
-			D8Led_symbol(led8_count & 0xf); // Actualizar el display LED
+			D8Led_symbol(led8_count & 0xf);
 
 			if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
 			{
@@ -119,14 +201,14 @@ void timer1_ISR(void)
 		{
 			if ((rPDATG & 0x40) && (rPDATG & 0x80)) // Botón liberado
 			{
-				button_state = RELEASED;
 				last_timer_value = timer1_leer();
+				button_state = RELEASED;
 			}
 		}
 		break;
 
 	case RELEASED:
-		if ((timer1_leer() - last_timer_value) > 720895) // TRD
+		if ((timer1_leer() - last_timer_value) > 2752512) // TRD
 		{
 			push_debug(RELEASED_IRQ, button_id, timer1_leer());
 			button_state = WAITING;
