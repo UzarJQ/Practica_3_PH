@@ -159,6 +159,10 @@ cuadricula_candidatos_verificar(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int r
 			{
 				cuadricula[row][col] |= 0x4000; // Marcar la celda con error
 				errors++;
+			} // Si el valor no esta en la lista de candidatos, marcar la celda con error
+			else
+			{
+				cuadricula[row][col] &= ~0x4000;
 			}
 		}
 		else

@@ -11,6 +11,7 @@
 #include "44blib.h"
 #include "eventos.h"
 #include "sudoku_2024.h"
+#include "cola.h"
 
 /*--- variables globales ---*/
 extern int switch_leds;
@@ -19,6 +20,7 @@ volatile int led_event_counter = 0;
 extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
 static int selected_row = 0;
 static int selected_column = 0;
+static int modifying_value = 0;
 
 /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
 https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -74,6 +76,7 @@ void timer1_inicializar(void)
 	rTCON |= (1 << 9);																				// Set bit 9 (update=manual)
 	rTCON &= ~(1 << 11);																			// Clear bit 11 (auto-reload off)
 	rTCON = (rTCON & ~(0x1 << 9)) | (0x1 << 11) | (0x1 << 8); // Clear bit 9 and set bit 11 (update=manual, auto-reload on)
+	push_debug(3, 0, timer1_leer());
 }
 
 void timer1_ISR(void)
@@ -94,13 +97,12 @@ void timer1_ISR(void)
 	case PRESSED:
 		if ((timer1_leer() - last_timer_value) > 272016) // TRP
 		{
-
 			switch (sudoku_status)
 			{
 			case NOT_STARTED:
 				break;
 			case STARTED:
-				sudoku_candidatos_init_c(cuadricula, 0);
+				sudoku_candidatos_init_arm(cuadricula, 1);
 				led8_count = 15;
 				sudoku_status = ROW_SELECTION;
 				break;
@@ -167,10 +169,20 @@ void timer1_ISR(void)
 					if (cuadricula[selected_row][selected_column] & 0x4000) // Comprobar si hay errores
 					{
 						led8_count = 14; // Indicar error con una E en el 8led
+						modifying_value = 1;
+						break;
 					}
 					else // Si no hay errores, propagar el valor de la celda
 					{
-						sudoku_candidatos_propagar_c(cuadricula, selected_row, selected_column, led8_count);
+						if (modifying_value)
+						{
+							sudoku_candidatos_init_arm(cuadricula, 1);
+							modifying_value = 0;
+						}
+						else
+						{
+							sudoku_candidatos_propagar_arm(cuadricula, selected_row, selected_column, led8_count);
+						}
 
 						led8_count = 15;
 						sudoku_status = ROW_SELECTION;
@@ -301,3 +313,8 @@ void timer2_init(void)
 
 	rTCON = (rTCON & ~(0x1 << 13)) | (0x1 << 15) | (0x1 << 12); // Auto-reload y Start
 }
+
+// 102000 - 65535 = 36465 C C
+// 79669 - 65535 = 14134 C ARM
+// 98385 - 65535 = 32850 ARM C
+// 76040 - 65535 = 10505 ARM ARM
