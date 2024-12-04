@@ -15,7 +15,7 @@ typedef enum
   WAITING,
   PRESSED,
   RELEASED,
-  MANTAINED
+  MAINTAINED
 } ButtonState;
 
 // stack variables

@@ -198,7 +198,7 @@ void timer1_ISR(void)
 
 			if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
 			{
-				button_state = MANTAINED; // Cambiar a estado mantenido
+				button_state = MAINTAINED; // Cambiar a estado mantenido
 			}
 			else
 			{
@@ -208,7 +208,7 @@ void timer1_ISR(void)
 		}
 		break;
 
-	case MANTAINED:
+	case MAINTAINED:
 		if ((timer1_leer() - last_timer_value) > 50000) // 50 ms
 		{
 			if ((rPDATG & 0x40) && (rPDATG & 0x80)) // Botón liberado
