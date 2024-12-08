@@ -21,6 +21,8 @@ extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
 static int selected_row = 0;
 static int selected_column = 0;
 static int modifying_value = 0;
+static unsigned int TRP = 272016;
+static unsigned int TRD = 275251;
 
 /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
 https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
@@ -61,7 +63,7 @@ void timer_init(void)
 void timer1_inicializar(void)
 {
 	rINTMOD = 0x0; // Configura las lineas como de tipo IRQ
-	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
+	rINTCON = 0x1; // Habilita int vectorizadas y la linea IRQ (FIQ no)
 	rINTMSK &= ~(BIT_TIMER1);
 
 	pISR_TIMER1 = (unsigned)timer1_ISR;
@@ -76,17 +78,17 @@ void timer1_inicializar(void)
 	rTCON |= (1 << 9);																				// Set bit 9 (update=manual)
 	rTCON &= ~(1 << 11);																			// Clear bit 11 (auto-reload off)
 	rTCON = (rTCON & ~(0x1 << 9)) | (0x1 << 11) | (0x1 << 8); // Clear bit 9 and set bit 11 (update=manual, auto-reload on)
-	push_debug(3, 0, timer1_leer());
 }
 
 void timer1_ISR(void)
 {
 	timer1_num_int++; // Incrementar el contador de ciclos completos
-	// Máquina de estados
+
+	// Maquina de estados
 	switch (button_state)
 	{
 	case WAITING:
-		if (button_flag == 1) // Detectar una nueva pulsación
+		if (button_flag == 1)
 		{
 			button_state = PRESSED;
 			last_timer_value = timer1_leer();
@@ -95,7 +97,7 @@ void timer1_ISR(void)
 		break;
 
 	case PRESSED:
-		if ((timer1_leer() - last_timer_value) > 272016) // TRP
+		if ((timer1_leer() - last_timer_value) > TRP)
 		{
 			switch (sudoku_status)
 			{
@@ -217,10 +219,11 @@ void timer1_ISR(void)
 				button_state = RELEASED;
 			}
 		}
+		last_timer_value = timer1_leer();
 		break;
 
 	case RELEASED:
-		if ((timer1_leer() - last_timer_value) > 2752512) // TRD
+		if ((timer1_leer() - last_timer_value) > TRD)
 		{
 			push_debug(RELEASED_IRQ, button_id, timer1_leer());
 			button_state = WAITING;
@@ -305,7 +308,7 @@ void timer2_init(void)
 	rTCFG0 = 0x8;
 	rTCFG1 = 0x0;
 
-	rTCNTB2 = 100000;
+	rTCNTB2 = 10000;
 	rTCMPB2 = 0x0;
 
 	rTCON |= (1 << 13); // Actualización manual
