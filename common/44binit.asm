@@ -254,7 +254,8 @@ ResetHandler:
     #****************************************************
     #*	Set memory control registers					* 	
     #****************************************************
-    ldr	    r0,=SMRDATA
+    /*ldr	    r0,=SMRDATA*/
+    ldr     r0, =(SMRDATA-0xc000000)
     ldmia   r0,{r1-r13}
     ldr	    r0,=0x01c80000  	/* BWSCON Address */
     stmia   r0,{r1-r13}
@@ -275,8 +276,10 @@ ResetHandler:
     #********************************************************
     #*	Copy and paste RW data/zero initialized data	    *
     #********************************************************
-    LDR	    r0, =Image_RO_Limit	/* Get pointer to ROM data */
-    LDR	    r1, =Image_RW_Base	/* and RAM copy	*/
+    // LDR	    r0, =Image_RO_Limit	/* Get pointer to ROM data */
+    // LDR	    r1, =Image_RW_Base	/* and RAM copy	*/
+    LDR r0,     =0
+    LDR r1,     =Image_ZI_Base
     LDR	    r3, =Image_ZI_Base	
 	/* Zero init base => top of initialised data */
 			
@@ -656,7 +659,7 @@ row_index:
 	CMP r8, #3
 	BLT row_index_end						@ Si es menor a 3, termina el calculo de fila
 
-	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region vertical)
+	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1ï¿½,2ï¿½ o 3ï¿½ region vertical)
 	ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
 	B row_index
 row_index_end:
@@ -668,7 +671,7 @@ col_index:
 	CMP r8, #3
 	BLT col_index_end						@ Si es menor a 3, termina el calculo de columna
 
-	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region horizontal)
+	SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1ï¿½,2ï¿½ o 3ï¿½ region horizontal)
 	ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
 	B col_index
 col_index_end:
@@ -707,7 +710,7 @@ skip_cell:
 	B region_col_loop
 end_of_column:
 	ADD r7, r7, #1
-	SUB r8, r8, #3						@ Regresar a la primera columa de la región
+	SUB r8, r8, #3						@ Regresar a la primera columa de la regiï¿½n
 	B region_row_loop
 end_of_region:
 	LDMFD sp!, {r11, r12, lr}
@@ -723,7 +726,7 @@ end_of_region:
 
 cuadricula:
      /* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
-    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0, 0,0,0,0,0,0
+    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
     .hword   0x0000,0x0000,0x0000,0x0000,0x8009,0x0000,0x0000,0x0000,0x8005,0,0,0,0,0,0,0
     .hword   0x0000,0x8009,0x8006,0x8007,0x0000,0x8005,0x0000,0x8003,0x0000,0,0,0,0,0,0,0
     .hword   0x0000,0x8008,0x0000,0x8009,0x0000,0x0000,0x8006,0x0000,0x0000,0,0,0,0,0,0,0

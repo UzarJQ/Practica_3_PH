@@ -11,27 +11,43 @@
   11              		.file	"timer.c"
   21              	.Ltext0:
   22              		.file 1 "../timer.c"
- 2758              		.align	2
- 2761              	timer1_num_int:
- 2762 0000 00000000 		.space	4
- 2763              		.global	led_event_counter
- 2764              		.align	2
- 2767              	led_event_counter:
- 2768 0004 00000000 		.space	4
- 2769              		.align	2
- 2770              	selected_row:
- 2771 0008 00000000 		.space	4
- 2772              		.align	2
- 2773              	selected_column:
- 2774 000c 00000000 		.space	4
- 2775              		.align	2
- 2776              	modifying_value:
- 2777 0010 00000000 		.space	4
- 2778              		.text
- 2779              		.align	2
- 2780              		.global	timer_ISR
- 2782              	timer_ISR:
- 2783              	.LFB0:
+ 3007              		.align	2
+ 3010              	timer1_num_int:
+ 3011 0000 00000000 		.space	4
+ 3012              		.global	led_event_counter
+ 3013              		.align	2
+ 3016              	led_event_counter:
+ 3017 0004 00000000 		.space	4
+ 3018              		.global	game_started
+ 3019              		.align	2
+ 3022              	game_started:
+ 3023 0008 00000000 		.space	4
+ 3024              		.global	time_counter
+ 3025              		.align	2
+ 3028              	time_counter:
+ 3029 000c 00000000 		.space	4
+ 3030              		.global	seconds
+ 3031              		.align	2
+ 3034              	seconds:
+ 3035 0010 00000000 		.space	4
+ 3036              		.align	2
+ 3037              	selected_row:
+ 3038 0014 00000000 		.space	4
+ 3039              		.align	2
+ 3040              	selected_column:
+ 3041 0018 00000000 		.space	4
+ 3042              		.data
+ 3043              		.align	2
+ 3046              	TRP:
+ 3047 0000 90260400 		.word	272016
+ 3048              		.align	2
+ 3051              	TRD:
+ 3052 0004 33330400 		.word	275251
+ 3053              		.text
+ 3054              		.align	2
+ 3055              		.global	timer_ISR
+ 3057              	timer_ISR:
+ 3058              	.LFB0:
    1:../timer.c    **** /*********************************************************************************************
    2:../timer.c    ****  * Fichero:		timer.c
    3:../timer.c    ****  * Autor:
@@ -46,1414 +62,1601 @@
   12:../timer.c    **** #include "eventos.h"
   13:../timer.c    **** #include "sudoku_2024.h"
   14:../timer.c    **** #include "cola.h"
-  15:../timer.c    **** 
-  16:../timer.c    **** /*--- variables globales ---*/
-  17:../timer.c    **** extern int switch_leds;
-  18:../timer.c    **** int timer1_num_int = 0; // Contador de periodos completos por el timer1
-  19:../timer.c    **** volatile int led_event_counter = 0;
-  20:../timer.c    **** extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
-  21:../timer.c    **** static int selected_row = 0;
-  22:../timer.c    **** static int selected_column = 0;
-  23:../timer.c    **** static int modifying_value = 0;
-  24:../timer.c    **** 
-  25:../timer.c    **** /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
-  26:../timer.c    **** https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
-  27:../timer.c    **** void timer_ISR(void) __attribute__((interrupt("IRQ")));
-  28:../timer.c    **** void timer1_ISR(void) __attribute__((interrupt("IRQ")));
-  29:../timer.c    **** void timer2_ISR(void) __attribute__((interrupt("IRQ")));
+  15:../timer.c    **** #include "Bmp.h"
+  16:../timer.c    **** #include "lcd.h"
+  17:../timer.c    **** 
+  18:../timer.c    **** /*--- variables globales ---*/
+  19:../timer.c    **** extern int switch_leds;
+  20:../timer.c    **** int timer1_num_int = 0; // Contador de periodos completos por el timer1
+  21:../timer.c    **** volatile int led_event_counter = 0;
+  22:../timer.c    **** volatile int game_started = 0;
+  23:../timer.c    **** volatile int time_counter = 0;
+  24:../timer.c    **** volatile int seconds = 0;
+  25:../timer.c    **** extern CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS];
+  26:../timer.c    **** static int selected_row = 0;
+  27:../timer.c    **** static int selected_column = 0;
+  28:../timer.c    **** static unsigned int TRP = 272016;
+  29:../timer.c    **** static unsigned int TRD = 275251;
   30:../timer.c    **** 
-  31:../timer.c    **** /*--- codigo de las funciones ---*/
-  32:../timer.c    **** void timer_ISR(void)
-  33:../timer.c    **** {
- 2784              		.loc 1 33 0
- 2785              		.cfi_startproc
- 2786              		@ Interrupt Service Routine.
- 2787              		@ args = 0, pretend = 0, frame = 0
- 2788              		@ frame_needed = 1, uses_anonymous_args = 0
- 2789 0000 04C02DE5 		str	ip, [sp, #-4]!
- 2790 0004 0DC0A0E1 		mov	ip, sp
- 2791              	.LCFI0:
- 2792              		.cfi_def_cfa_register 12
- 2793 0008 0CD82DE9 		stmfd	sp!, {r2, r3, fp, ip, lr, pc}
- 2794 000c 04B04CE2 		sub	fp, ip, #4
- 2795              		.cfi_offset 14, -8
- 2796              		.cfi_offset 13, -12
- 2797              		.cfi_offset 11, -16
- 2798              		.cfi_offset 3, -20
- 2799              		.cfi_offset 2, -24
- 2800              	.LCFI1:
- 2801              		.cfi_def_cfa 11, 4
-  34:../timer.c    **** 	switch_leds = 1;
- 2802              		.loc 1 34 0
- 2803 0010 28309FE5 		ldr	r3, .L2
- 2804 0014 0120A0E3 		mov	r2, #1
- 2805 0018 002083E5 		str	r2, [r3, #0]
-  35:../timer.c    **** 
-  36:../timer.c    **** 	/* borrar bit en I_ISPC para desactivar la solicitud de interrupci�n*/
-  37:../timer.c    **** 	rI_ISPC |= BIT_TIMER0; // BIT_TIMER0 est� definido en 44b.h y pone un uno en el bit 13 que corre
- 2806              		.loc 1 37 0
- 2807 001c 20309FE5 		ldr	r3, .L2+4
- 2808 0020 1C209FE5 		ldr	r2, .L2+4
- 2809 0024 002092E5 		ldr	r2, [r2, #0]
- 2810 0028 022A82E3 		orr	r2, r2, #8192
- 2811 002c 002083E5 		str	r2, [r3, #0]
-  38:../timer.c    **** }
- 2812              		.loc 1 38 0
- 2813 0030 14D04BE2 		sub	sp, fp, #20
- 2814 0034 0C689DE8 		ldmfd	sp, {r2, r3, fp, sp, lr}
- 2815 0038 04C09DE4 		ldmfd	sp!, {ip}
- 2816 003c 04F05EE2 		subs	pc, lr, #4
- 2817              	.L3:
- 2818              		.align	2
- 2819              	.L2:
- 2820 0040 00000000 		.word	switch_leds
- 2821 0044 2400E001 		.word	31457316
- 2822              		.cfi_endproc
- 2823              	.LFE0:
- 2825              		.align	2
- 2826              		.global	timer_init
- 2828              	timer_init:
- 2829              	.LFB1:
-  39:../timer.c    **** 
-  40:../timer.c    **** void timer_init(void)
-  41:../timer.c    **** {
- 2830              		.loc 1 41 0
- 2831              		.cfi_startproc
- 2832              		@ Function supports interworking.
- 2833              		@ args = 0, pretend = 0, frame = 0
- 2834              		@ frame_needed = 1, uses_anonymous_args = 0
- 2835 0048 0DC0A0E1 		mov	ip, sp
- 2836              	.LCFI2:
- 2837              		.cfi_def_cfa_register 12
- 2838 004c 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2839 0050 04B04CE2 		sub	fp, ip, #4
- 2840              		.cfi_offset 14, -8
- 2841              		.cfi_offset 13, -12
- 2842              		.cfi_offset 11, -16
- 2843              	.LCFI3:
- 2844              		.cfi_def_cfa 11, 4
-  42:../timer.c    **** 	/* Configuracion controlador de interrupciones */
-  43:../timer.c    **** 	rINTMOD = 0x0;						// Configura las lineas como de tipo IRQ
- 2845              		.loc 1 43 0
- 2846 0054 84309FE5 		ldr	r3, .L5
- 2847 0058 0020A0E3 		mov	r2, #0
- 2848 005c 002083E5 		str	r2, [r3, #0]
-  44:../timer.c    **** 	rINTCON = 0x1;						// Habilita int. vectorizadas y la linea IRQ (FIQ no)
- 2849              		.loc 1 44 0
- 2850 0060 1E36A0E3 		mov	r3, #31457280
- 2851 0064 0120A0E3 		mov	r2, #1
- 2852 0068 002083E5 		str	r2, [r3, #0]
-  45:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER0); // habilitamos en vector de mascaras de interrupcion el Timer0 (bits 26 
- 2853              		.loc 1 45 0
- 2854 006c 70309FE5 		ldr	r3, .L5+4
- 2855 0070 6C209FE5 		ldr	r2, .L5+4
- 2856 0074 002092E5 		ldr	r2, [r2, #0]
- 2857 0078 022AC2E3 		bic	r2, r2, #8192
- 2858 007c 002083E5 		str	r2, [r3, #0]
-  46:../timer.c    **** 
-  47:../timer.c    **** 	/* Establece la rutina de servicio para TIMER0 */
-  48:../timer.c    **** 	pISR_TIMER0 = (unsigned)timer_ISR;
- 2859              		.loc 1 48 0
- 2860 0080 60309FE5 		ldr	r3, .L5+8
- 2861 0084 60209FE5 		ldr	r2, .L5+12
- 2862 0088 002083E5 		str	r2, [r3, #0]
+  31:../timer.c    **** /* declaraci�n de funci�n que es rutina de servicio de interrupci�n
+  32:../timer.c    **** https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html */
+  33:../timer.c    **** void timer_ISR(void) __attribute__((interrupt("IRQ")));
+  34:../timer.c    **** void timer1_ISR(void) __attribute__((interrupt("IRQ")));
+  35:../timer.c    **** void timer2_ISR(void) __attribute__((interrupt("IRQ")));
+  36:../timer.c    **** 
+  37:../timer.c    **** /*--- codigo de las funciones ---*/
+  38:../timer.c    **** void timer_ISR(void)
+  39:../timer.c    **** {
+ 3059              		.loc 1 39 0
+ 3060              		.cfi_startproc
+ 3061              		@ Interrupt Service Routine.
+ 3062              		@ args = 0, pretend = 0, frame = 8
+ 3063              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3064 0000 04C02DE5 		str	ip, [sp, #-4]!
+ 3065 0004 0DC0A0E1 		mov	ip, sp
+ 3066              	.LCFI0:
+ 3067              		.cfi_def_cfa_register 12
+ 3068 0008 0FD82DE9 		stmfd	sp!, {r0, r1, r2, r3, fp, ip, lr, pc}
+ 3069 000c 04B04CE2 		sub	fp, ip, #4
+ 3070              		.cfi_offset 14, -8
+ 3071              		.cfi_offset 13, -12
+ 3072              		.cfi_offset 11, -16
+ 3073              		.cfi_offset 3, -20
+ 3074              		.cfi_offset 2, -24
+ 3075              		.cfi_offset 1, -28
+ 3076              		.cfi_offset 0, -32
+ 3077              	.LCFI1:
+ 3078              		.cfi_def_cfa 11, 4
+ 3079 0010 10D04DE2 		sub	sp, sp, #16
+  40:../timer.c    **** 	static int time_counter = 0; // Contador de segundos
+  41:../timer.c    **** 
+  42:../timer.c    **** 	if (game_started)
+ 3080              		.loc 1 42 0
+ 3081 0014 3C319FE5 		ldr	r3, .L3
+ 3082 0018 003093E5 		ldr	r3, [r3, #0]
+ 3083 001c 000053E3 		cmp	r3, #0
+ 3084 0020 4300000A 		beq	.L2
+  43:../timer.c    **** 	{
+  44:../timer.c    **** 		time_counter++; // Incrementa el contador de segundos
+ 3085              		.loc 1 44 0
+ 3086 0024 30319FE5 		ldr	r3, .L3+4
+ 3087 0028 003093E5 		ldr	r3, [r3, #0]
+ 3088 002c 012083E2 		add	r2, r3, #1
+ 3089 0030 24319FE5 		ldr	r3, .L3+4
+ 3090 0034 002083E5 		str	r2, [r3, #0]
+  45:../timer.c    **** 
+  46:../timer.c    **** 		if ((time_counter % 1000) == 0) // Reinicia el contador cada 2 segundos
+ 3091              		.loc 1 46 0
+ 3092 0038 1C319FE5 		ldr	r3, .L3+4
+ 3093 003c 001093E5 		ldr	r1, [r3, #0]
+ 3094 0040 18319FE5 		ldr	r3, .L3+8
+ 3095 0044 9123C3E0 		smull	r2, r3, r1, r3
+ 3096 0048 4323A0E1 		mov	r2, r3, asr #6
+ 3097 004c C13FA0E1 		mov	r3, r1, asr #31
+ 3098 0050 022063E0 		rsb	r2, r3, r2
+ 3099 0054 0230A0E1 		mov	r3, r2
+ 3100 0058 8332A0E1 		mov	r3, r3, asl #5
+ 3101 005c 033062E0 		rsb	r3, r2, r3
+ 3102 0060 0331A0E1 		mov	r3, r3, asl #2
+ 3103 0064 023083E0 		add	r3, r3, r2
+ 3104 0068 8331A0E1 		mov	r3, r3, asl #3
+ 3105 006c 012063E0 		rsb	r2, r3, r1
+ 3106 0070 000052E3 		cmp	r2, #0
+ 3107 0074 2E00001A 		bne	.L2
+ 3108              	.LBB2:
+  47:../timer.c    **** 		{
+  48:../timer.c    **** 			seconds++;
+ 3109              		.loc 1 48 0
+ 3110 0078 E4309FE5 		ldr	r3, .L3+12
+ 3111 007c 003093E5 		ldr	r3, [r3, #0]
+ 3112 0080 012083E2 		add	r2, r3, #1
+ 3113 0084 D8309FE5 		ldr	r3, .L3+12
+ 3114 0088 002083E5 		str	r2, [r3, #0]
   49:../timer.c    **** 
-  50:../timer.c    **** 	/* Configura el Timer0 */
-  51:../timer.c    **** 	rTCFG0 = 255;		 // ajusta el preescalado
- 2863              		.loc 1 51 0
- 2864 008c 5C309FE5 		ldr	r3, .L5+16
- 2865 0090 FF20A0E3 		mov	r2, #255
- 2866 0094 002083E5 		str	r2, [r3, #0]
-  52:../timer.c    **** 	rTCFG1 = 0x0;		 // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un 
- 2867              		.loc 1 52 0
- 2868 0098 54309FE5 		ldr	r3, .L5+20
- 2869 009c 0020A0E3 		mov	r2, #0
- 2870 00a0 002083E5 		str	r2, [r3, #0]
-  53:../timer.c    **** 	rTCNTB0 = 65535; // valor inicial de cuenta (la cuenta es descendente)
- 2871              		.loc 1 53 0
- 2872 00a4 4C309FE5 		ldr	r3, .L5+24
- 2873 00a8 4C209FE5 		ldr	r2, .L5+28
- 2874 00ac 002083E5 		str	r2, [r3, #0]
-  54:../timer.c    **** 	rTCMPB0 = 12800; // valor de comparaci�n
- 2875              		.loc 1 54 0
- 2876 00b0 48309FE5 		ldr	r3, .L5+32
- 2877 00b4 322CA0E3 		mov	r2, #12800
- 2878 00b8 002083E5 		str	r2, [r3, #0]
-  55:../timer.c    **** 	/* establecer update=manual (bit 1) + inverter=on (�? ser� inverter off un cero en el bit 2 po
-  56:../timer.c    **** 	rTCON = 0x2;
- 2879              		.loc 1 56 0
- 2880 00bc 40309FE5 		ldr	r3, .L5+36
- 2881 00c0 0220A0E3 		mov	r2, #2
- 2882 00c4 002083E5 		str	r2, [r3, #0]
-  57:../timer.c    **** 	/* iniciar timer (bit 0) con auto-reload (bit 3)*/
-  58:../timer.c    **** 	rTCON = 0x09;
- 2883              		.loc 1 58 0
- 2884 00c8 34309FE5 		ldr	r3, .L5+36
- 2885 00cc 0920A0E3 		mov	r2, #9
- 2886 00d0 002083E5 		str	r2, [r3, #0]
-  59:../timer.c    **** }
- 2887              		.loc 1 59 0
- 2888 00d4 0CD04BE2 		sub	sp, fp, #12
- 2889 00d8 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 2890 00dc 1EFF2FE1 		bx	lr
- 2891              	.L6:
- 2892              		.align	2
- 2893              	.L5:
- 2894 00e0 0800E001 		.word	31457288
- 2895 00e4 0C00E001 		.word	31457292
- 2896 00e8 54FF7F0C 		.word	209715028
- 2897 00ec 00000000 		.word	timer_ISR
- 2898 00f0 0000D501 		.word	30736384
- 2899 00f4 0400D501 		.word	30736388
- 2900 00f8 0C00D501 		.word	30736396
- 2901 00fc FFFF0000 		.word	65535
- 2902 0100 1000D501 		.word	30736400
- 2903 0104 0800D501 		.word	30736392
- 2904              		.cfi_endproc
- 2905              	.LFE1:
- 2907              		.align	2
- 2908              		.global	timer1_inicializar
- 2910              	timer1_inicializar:
- 2911              	.LFB2:
-  60:../timer.c    **** 
-  61:../timer.c    **** void timer1_inicializar(void)
-  62:../timer.c    **** {
- 2912              		.loc 1 62 0
- 2913              		.cfi_startproc
- 2914              		@ Function supports interworking.
- 2915              		@ args = 0, pretend = 0, frame = 0
- 2916              		@ frame_needed = 1, uses_anonymous_args = 0
- 2917 0108 0DC0A0E1 		mov	ip, sp
- 2918              	.LCFI4:
- 2919              		.cfi_def_cfa_register 12
- 2920 010c 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2921 0110 04B04CE2 		sub	fp, ip, #4
- 2922              		.cfi_offset 14, -8
- 2923              		.cfi_offset 13, -12
- 2924              		.cfi_offset 11, -16
- 2925              	.LCFI5:
- 2926              		.cfi_def_cfa 11, 4
-  63:../timer.c    **** 	rINTMOD = 0x0; // Configura las lineas como de tipo IRQ
- 2927              		.loc 1 63 0
- 2928 0114 C4309FE5 		ldr	r3, .L8
- 2929 0118 0020A0E3 		mov	r2, #0
- 2930 011c 002083E5 		str	r2, [r3, #0]
-  64:../timer.c    **** 	rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
- 2931              		.loc 1 64 0
- 2932 0120 1E36A0E3 		mov	r3, #31457280
- 2933 0124 0120A0E3 		mov	r2, #1
- 2934 0128 002083E5 		str	r2, [r3, #0]
-  65:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER1);
- 2935              		.loc 1 65 0
- 2936 012c B0309FE5 		ldr	r3, .L8+4
- 2937 0130 AC209FE5 		ldr	r2, .L8+4
- 2938 0134 002092E5 		ldr	r2, [r2, #0]
- 2939 0138 012AC2E3 		bic	r2, r2, #4096
- 2940 013c 002083E5 		str	r2, [r3, #0]
-  66:../timer.c    **** 
-  67:../timer.c    **** 	pISR_TIMER1 = (unsigned)timer1_ISR;
- 2941              		.loc 1 67 0
- 2942 0140 A0309FE5 		ldr	r3, .L8+8
- 2943 0144 A0209FE5 		ldr	r2, .L8+12
- 2944 0148 002083E5 		str	r2, [r3, #0]
+  50:../timer.c    **** 			LcdClrRect(63, 5, 120, 17, WHITE);
+ 3115              		.loc 1 50 0
+ 3116 008c 0030A0E3 		mov	r3, #0
+ 3117 0090 00308DE5 		str	r3, [sp, #0]
+ 3118 0094 3F00A0E3 		mov	r0, #63
+ 3119 0098 0510A0E3 		mov	r1, #5
+ 3120 009c 7820A0E3 		mov	r2, #120
+ 3121 00a0 1130A0E3 		mov	r3, #17
+ 3122 00a4 FEFFFFEB 		bl	LcdClrRect
+  51:../timer.c    **** 			char time[3];
+  52:../timer.c    **** 			time[0] = (seconds / 10) + '0';
+ 3123              		.loc 1 52 0
+ 3124 00a8 B4309FE5 		ldr	r3, .L3+12
+ 3125 00ac 003093E5 		ldr	r3, [r3, #0]
+ 3126 00b0 B0209FE5 		ldr	r2, .L3+16
+ 3127 00b4 9312C2E0 		smull	r1, r2, r3, r2
+ 3128 00b8 4221A0E1 		mov	r2, r2, asr #2
+ 3129 00bc C33FA0E1 		mov	r3, r3, asr #31
+ 3130 00c0 023063E0 		rsb	r3, r3, r2
+ 3131 00c4 FF3003E2 		and	r3, r3, #255
+ 3132 00c8 303083E2 		add	r3, r3, #48
+ 3133 00cc FF3003E2 		and	r3, r3, #255
+ 3134 00d0 20304BE5 		strb	r3, [fp, #-32]
+  53:../timer.c    **** 			time[1] = (seconds % 10) + '0';
+ 3135              		.loc 1 53 0
+ 3136 00d4 88309FE5 		ldr	r3, .L3+12
+ 3137 00d8 001093E5 		ldr	r1, [r3, #0]
+ 3138 00dc 84309FE5 		ldr	r3, .L3+16
+ 3139 00e0 9123C3E0 		smull	r2, r3, r1, r3
+ 3140 00e4 4321A0E1 		mov	r2, r3, asr #2
+ 3141 00e8 C13FA0E1 		mov	r3, r1, asr #31
+ 3142 00ec 022063E0 		rsb	r2, r3, r2
+ 3143 00f0 0230A0E1 		mov	r3, r2
+ 3144 00f4 0331A0E1 		mov	r3, r3, asl #2
+ 3145 00f8 023083E0 		add	r3, r3, r2
+ 3146 00fc 8330A0E1 		mov	r3, r3, asl #1
+ 3147 0100 012063E0 		rsb	r2, r3, r1
+ 3148 0104 FF3002E2 		and	r3, r2, #255
+ 3149 0108 303083E2 		add	r3, r3, #48
+ 3150 010c FF3003E2 		and	r3, r3, #255
+ 3151 0110 1F304BE5 		strb	r3, [fp, #-31]
+  54:../timer.c    **** 			time[2] = '\0';
+ 3152              		.loc 1 54 0
+ 3153 0114 0030A0E3 		mov	r3, #0
+ 3154 0118 1E304BE5 		strb	r3, [fp, #-30]
+  55:../timer.c    **** 			Lcd_DspAscII8x16(65, 5, BLACK, time);
+ 3155              		.loc 1 55 0
+ 3156 011c 20304BE2 		sub	r3, fp, #32
+ 3157 0120 4100A0E3 		mov	r0, #65
+ 3158 0124 0510A0E3 		mov	r1, #5
+ 3159 0128 0F20A0E3 		mov	r2, #15
+ 3160 012c FEFFFFEB 		bl	Lcd_DspAscII8x16
+  56:../timer.c    **** 			Lcd_Dma_Trans();
+ 3161              		.loc 1 56 0
+ 3162 0130 FEFFFFEB 		bl	Lcd_Dma_Trans
+ 3163              	.L2:
+ 3164              	.LBE2:
+  57:../timer.c    **** 		}
+  58:../timer.c    **** 	}
+  59:../timer.c    **** 	// Borrar el bit de interrupción para Timer0
+  60:../timer.c    **** 	rI_ISPC |= BIT_TIMER0; // BIT_TIMER0 está definido en 44b.h
+ 3165              		.loc 1 60 0
+ 3166 0134 30309FE5 		ldr	r3, .L3+20
+ 3167 0138 2C209FE5 		ldr	r2, .L3+20
+ 3168 013c 002092E5 		ldr	r2, [r2, #0]
+ 3169 0140 022A82E3 		orr	r2, r2, #8192
+ 3170 0144 002083E5 		str	r2, [r3, #0]
+  61:../timer.c    **** }
+ 3171              		.loc 1 61 0
+ 3172 0148 1CD04BE2 		sub	sp, fp, #28
+ 3173 014c 0F689DE8 		ldmfd	sp, {r0, r1, r2, r3, fp, sp, lr}
+ 3174 0150 04C09DE4 		ldmfd	sp!, {ip}
+ 3175 0154 04F05EE2 		subs	pc, lr, #4
+ 3176              	.L4:
+ 3177              		.align	2
+ 3178              	.L3:
+ 3179 0158 00000000 		.word	game_started
+ 3180 015c 1C000000 		.word	time_counter.4214
+ 3181 0160 D34D6210 		.word	274877907
+ 3182 0164 00000000 		.word	seconds
+ 3183 0168 67666666 		.word	1717986919
+ 3184 016c 2400E001 		.word	31457316
+ 3185              		.cfi_endproc
+ 3186              	.LFE0:
+ 3188              		.align	2
+ 3189              		.global	timer_init
+ 3191              	timer_init:
+ 3192              	.LFB1:
+  62:../timer.c    **** 
+  63:../timer.c    **** void timer_init(void)
+  64:../timer.c    **** {
+ 3193              		.loc 1 64 0
+ 3194              		.cfi_startproc
+ 3195              		@ Function supports interworking.
+ 3196              		@ args = 0, pretend = 0, frame = 0
+ 3197              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3198 0170 0DC0A0E1 		mov	ip, sp
+ 3199              	.LCFI2:
+ 3200              		.cfi_def_cfa_register 12
+ 3201 0174 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 3202 0178 04B04CE2 		sub	fp, ip, #4
+ 3203              		.cfi_offset 14, -8
+ 3204              		.cfi_offset 13, -12
+ 3205              		.cfi_offset 11, -16
+ 3206              	.LCFI3:
+ 3207              		.cfi_def_cfa 11, 4
+  65:../timer.c    **** 	rINTMOD = 0x0;						// Configuración para interrupciones de nivel
+ 3208              		.loc 1 65 0
+ 3209 017c A8309FE5 		ldr	r3, .L6
+ 3210 0180 0020A0E3 		mov	r2, #0
+ 3211 0184 002083E5 		str	r2, [r3, #0]
+  66:../timer.c    **** 	rINTCON = 0x1;						// Habilitar vectores
+ 3212              		.loc 1 66 0
+ 3213 0188 1E36A0E3 		mov	r3, #31457280
+ 3214 018c 0120A0E3 		mov	r2, #1
+ 3215 0190 002083E5 		str	r2, [r3, #0]
+  67:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER0); // Habilitar interrupción del Timer 0
+ 3216              		.loc 1 67 0
+ 3217 0194 94309FE5 		ldr	r3, .L6+4
+ 3218 0198 90209FE5 		ldr	r2, .L6+4
+ 3219 019c 002092E5 		ldr	r2, [r2, #0]
+ 3220 01a0 022AC2E3 		bic	r2, r2, #8192
+ 3221 01a4 002083E5 		str	r2, [r3, #0]
   68:../timer.c    **** 
-  69:../timer.c    **** 	// Configuracion del Timer1
-  70:../timer.c    **** 	rTCFG0 = 255;
- 2945              		.loc 1 70 0
- 2946 014c 9C309FE5 		ldr	r3, .L8+16
- 2947 0150 FF20A0E3 		mov	r2, #255
- 2948 0154 002083E5 		str	r2, [r3, #0]
-  71:../timer.c    **** 	rTCFG1 = 0x0;
- 2949              		.loc 1 71 0
- 2950 0158 94309FE5 		ldr	r3, .L8+20
- 2951 015c 0020A0E3 		mov	r2, #0
- 2952 0160 002083E5 		str	r2, [r3, #0]
-  72:../timer.c    **** 
-  73:../timer.c    **** 	rTCNTB1 = 64000;
- 2953              		.loc 1 73 0
- 2954 0164 8C309FE5 		ldr	r3, .L8+24
- 2955 0168 FA2CA0E3 		mov	r2, #64000
- 2956 016c 002083E5 		str	r2, [r3, #0]
-  74:../timer.c    **** 	rTCMPB1 = 0x0;
- 2957              		.loc 1 74 0
- 2958 0170 84309FE5 		ldr	r3, .L8+28
- 2959 0174 0020A0E3 		mov	r2, #0
- 2960 0178 002083E5 		str	r2, [r3, #0]
-  75:../timer.c    **** 
-  76:../timer.c    **** 	rTCON |= (1 << 9);																				// Set bit 9 (update=manual)
- 2961              		.loc 1 76 0
- 2962 017c 7C309FE5 		ldr	r3, .L8+32
- 2963 0180 78209FE5 		ldr	r2, .L8+32
- 2964 0184 002092E5 		ldr	r2, [r2, #0]
- 2965 0188 022C82E3 		orr	r2, r2, #512
- 2966 018c 002083E5 		str	r2, [r3, #0]
-  77:../timer.c    **** 	rTCON &= ~(1 << 11);																			// Clear bit 11 (auto-reload off)
- 2967              		.loc 1 77 0
- 2968 0190 68309FE5 		ldr	r3, .L8+32
- 2969 0194 64209FE5 		ldr	r2, .L8+32
- 2970 0198 002092E5 		ldr	r2, [r2, #0]
- 2971 019c 022BC2E3 		bic	r2, r2, #2048
- 2972 01a0 002083E5 		str	r2, [r3, #0]
-  78:../timer.c    **** 	rTCON = (rTCON & ~(0x1 << 9)) | (0x1 << 11) | (0x1 << 8); // Clear bit 9 and set bit 11 (update=ma
- 2973              		.loc 1 78 0
- 2974 01a4 54309FE5 		ldr	r3, .L8+32
- 2975 01a8 50209FE5 		ldr	r2, .L8+32
- 2976 01ac 002092E5 		ldr	r2, [r2, #0]
- 2977 01b0 0B2CC2E3 		bic	r2, r2, #2816
- 2978 01b4 092C82E3 		orr	r2, r2, #2304
- 2979 01b8 002083E5 		str	r2, [r3, #0]
-  79:../timer.c    **** 	push_debug(3, 0, timer1_leer());
- 2980              		.loc 1 79 0
- 2981 01bc FEFFFFEB 		bl	timer1_leer
- 2982 01c0 0030A0E1 		mov	r3, r0
- 2983 01c4 0300A0E3 		mov	r0, #3
- 2984 01c8 0010A0E3 		mov	r1, #0
- 2985 01cc 0320A0E1 		mov	r2, r3
- 2986 01d0 FEFFFFEB 		bl	push_debug
-  80:../timer.c    **** }
- 2987              		.loc 1 80 0
- 2988 01d4 0CD04BE2 		sub	sp, fp, #12
- 2989 01d8 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 2990 01dc 1EFF2FE1 		bx	lr
- 2991              	.L9:
- 2992              		.align	2
- 2993              	.L8:
- 2994 01e0 0800E001 		.word	31457288
- 2995 01e4 0C00E001 		.word	31457292
- 2996 01e8 50FF7F0C 		.word	209715024
- 2997 01ec 00000000 		.word	timer1_ISR
- 2998 01f0 0000D501 		.word	30736384
- 2999 01f4 0400D501 		.word	30736388
- 3000 01f8 1800D501 		.word	30736408
- 3001 01fc 1C00D501 		.word	30736412
- 3002 0200 0800D501 		.word	30736392
- 3003              		.cfi_endproc
- 3004              	.LFE2:
- 3006              		.align	2
- 3007              		.global	timer1_ISR
- 3009              	timer1_ISR:
- 3010              	.LFB3:
-  81:../timer.c    **** 
-  82:../timer.c    **** void timer1_ISR(void)
-  83:../timer.c    **** {
- 3011              		.loc 1 83 0
- 3012              		.cfi_startproc
- 3013              		@ Interrupt Service Routine.
- 3014              		@ args = 0, pretend = 0, frame = 0
- 3015              		@ frame_needed = 1, uses_anonymous_args = 0
- 3016 0204 04C02DE5 		str	ip, [sp, #-4]!
- 3017 0208 0DC0A0E1 		mov	ip, sp
- 3018              	.LCFI6:
- 3019              		.cfi_def_cfa_register 12
- 3020 020c 3FD82DE9 		stmfd	sp!, {r0, r1, r2, r3, r4, r5, fp, ip, lr, pc}
- 3021 0210 04B04CE2 		sub	fp, ip, #4
- 3022              		.cfi_offset 14, -8
- 3023              		.cfi_offset 13, -12
- 3024              		.cfi_offset 11, -16
- 3025              		.cfi_offset 5, -20
- 3026              		.cfi_offset 4, -24
- 3027              		.cfi_offset 3, -28
- 3028              		.cfi_offset 2, -32
- 3029              		.cfi_offset 1, -36
- 3030              		.cfi_offset 0, -40
- 3031              	.LCFI7:
- 3032              		.cfi_def_cfa 11, 4
-  84:../timer.c    **** 	timer1_num_int++; // Incrementar el contador de ciclos completos
- 3033              		.loc 1 84 0
- 3034 0214 88359FE5 		ldr	r3, .L53
- 3035 0218 003093E5 		ldr	r3, [r3, #0]
- 3036 021c 012083E2 		add	r2, r3, #1
- 3037 0220 7C359FE5 		ldr	r3, .L53
- 3038 0224 002083E5 		str	r2, [r3, #0]
-  85:../timer.c    **** 	// Máquina de estados
-  86:../timer.c    **** 	switch (button_state)
- 3039              		.loc 1 86 0
- 3040 0228 78359FE5 		ldr	r3, .L53+4
- 3041 022c 0030D3E5 		ldrb	r3, [r3, #0]
- 3042 0230 FF3003E2 		and	r3, r3, #255
- 3043 0234 030053E3 		cmp	r3, #3
- 3044 0238 03F19F97 		ldrls	pc, [pc, r3, asl #2]
- 3045 023c 400100EA 		b	.L11
- 3046              	.L16:
- 3047 0240 50020000 		.word	.L12
- 3048 0244 8C020000 		.word	.L13
- 3049 0248 D4060000 		.word	.L14
- 3050 024c 6C060000 		.word	.L15
- 3051              	.L12:
-  87:../timer.c    **** 	{
-  88:../timer.c    **** 	case WAITING:
-  89:../timer.c    **** 		if (button_flag == 1) // Detectar una nueva pulsación
- 3052              		.loc 1 89 0
- 3053 0250 54359FE5 		ldr	r3, .L53+8
- 3054 0254 003093E5 		ldr	r3, [r3, #0]
- 3055 0258 010053E3 		cmp	r3, #1
- 3056 025c 3C01001A 		bne	.L43
-  90:../timer.c    **** 		{
-  91:../timer.c    **** 			button_state = PRESSED;
- 3057              		.loc 1 91 0
- 3058 0260 40359FE5 		ldr	r3, .L53+4
- 3059 0264 0120A0E3 		mov	r2, #1
- 3060 0268 0020C3E5 		strb	r2, [r3, #0]
-  92:../timer.c    **** 			last_timer_value = timer1_leer();
- 3061              		.loc 1 92 0
- 3062 026c FEFFFFEB 		bl	timer1_leer
- 3063 0270 0020A0E1 		mov	r2, r0
- 3064 0274 34359FE5 		ldr	r3, .L53+12
- 3065 0278 002083E5 		str	r2, [r3, #0]
-  93:../timer.c    **** 			button_flag = 0;
- 3066              		.loc 1 93 0
- 3067 027c 28359FE5 		ldr	r3, .L53+8
- 3068 0280 0020A0E3 		mov	r2, #0
- 3069 0284 002083E5 		str	r2, [r3, #0]
-  94:../timer.c    **** 		}
-  95:../timer.c    **** 		break;
- 3070              		.loc 1 95 0
- 3071 0288 3C0100EA 		b	.L18
- 3072              	.L13:
-  96:../timer.c    **** 
-  97:../timer.c    **** 	case PRESSED:
-  98:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > 272016) // TRP
- 3073              		.loc 1 98 0
- 3074 028c FEFFFFEB 		bl	timer1_leer
- 3075 0290 0020A0E1 		mov	r2, r0
- 3076 0294 14359FE5 		ldr	r3, .L53+12
- 3077 0298 003093E5 		ldr	r3, [r3, #0]
- 3078 029c 022063E0 		rsb	r2, r3, r2
- 3079 02a0 0C359FE5 		ldr	r3, .L53+16
- 3080 02a4 030052E1 		cmp	r2, r3
- 3081 02a8 2B01009A 		bls	.L44
- 3082              	.LBB2:
-  99:../timer.c    **** 		{
- 100:../timer.c    **** 			switch (sudoku_status)
- 3083              		.loc 1 100 0
- 3084 02ac 04359FE5 		ldr	r3, .L53+20
- 3085 02b0 0030D3E5 		ldrb	r3, [r3, #0]
- 3086 02b4 FF3003E2 		and	r3, r3, #255
- 3087 02b8 040053E3 		cmp	r3, #4
- 3088 02bc 03F19F97 		ldrls	pc, [pc, r3, asl #2]
- 3089 02c0 C70000EA 		b	.L45
- 3090              	.L26:
- 3091 02c4 E4050000 		.word	.L45
- 3092 02c8 D8020000 		.word	.L22
- 3093 02cc 00030000 		.word	.L23
- 3094 02d0 88030000 		.word	.L24
- 3095 02d4 6C040000 		.word	.L25
- 3096              	.L22:
- 101:../timer.c    **** 			{
- 102:../timer.c    **** 			case NOT_STARTED:
- 103:../timer.c    **** 				break;
- 104:../timer.c    **** 			case STARTED:
- 105:../timer.c    **** 				sudoku_candidatos_init_arm(cuadricula, 1);
- 3097              		.loc 1 105 0
- 3098 02d8 DC049FE5 		ldr	r0, .L53+24
- 3099 02dc 0110A0E3 		mov	r1, #1
- 3100 02e0 FEFFFFEB 		bl	sudoku_candidatos_init_arm
- 106:../timer.c    **** 				led8_count = 15;
- 3101              		.loc 1 106 0
- 3102 02e4 D4349FE5 		ldr	r3, .L53+28
- 3103 02e8 0F20A0E3 		mov	r2, #15
- 3104 02ec 002083E5 		str	r2, [r3, #0]
- 107:../timer.c    **** 				sudoku_status = ROW_SELECTION;
- 3105              		.loc 1 107 0
- 3106 02f0 C0349FE5 		ldr	r3, .L53+20
- 3107 02f4 0220A0E3 		mov	r2, #2
- 3108 02f8 0020C3E5 		strb	r2, [r3, #0]
- 108:../timer.c    **** 				break;
- 3109              		.loc 1 108 0
- 3110 02fc BF0000EA 		b	.L27
- 3111              	.L23:
- 109:../timer.c    **** 			case ROW_SELECTION:
- 110:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
- 3112              		.loc 1 110 0
- 3113 0300 BC349FE5 		ldr	r3, .L53+32
- 3114 0304 003093E5 		ldr	r3, [r3, #0]
- 3115 0308 403003E2 		and	r3, r3, #64
- 3116 030c 000053E3 		cmp	r3, #0
- 3117 0310 0B00001A 		bne	.L28
- 111:../timer.c    **** 				{
- 112:../timer.c    **** 					led8_count++;
- 3118              		.loc 1 112 0
- 3119 0314 A4349FE5 		ldr	r3, .L53+28
- 3120 0318 003093E5 		ldr	r3, [r3, #0]
- 3121 031c 012083E2 		add	r2, r3, #1
- 3122 0320 98349FE5 		ldr	r3, .L53+28
- 3123 0324 002083E5 		str	r2, [r3, #0]
- 113:../timer.c    **** 
- 114:../timer.c    **** 					if (led8_count > 9)
- 3124              		.loc 1 114 0
- 3125 0328 90349FE5 		ldr	r3, .L53+28
- 3126 032c 003093E5 		ldr	r3, [r3, #0]
- 3127 0330 090053E3 		cmp	r3, #9
- 3128 0334 020000DA 		ble	.L28
- 115:../timer.c    **** 					{
- 116:../timer.c    **** 						led8_count = 1;
- 3129              		.loc 1 116 0
- 3130 0338 80349FE5 		ldr	r3, .L53+28
- 3131 033c 0120A0E3 		mov	r2, #1
- 3132 0340 002083E5 		str	r2, [r3, #0]
- 3133              	.L28:
- 117:../timer.c    **** 					}
- 118:../timer.c    **** 				}
- 119:../timer.c    **** 
- 120:../timer.c    **** 				if (!(rPDATG & 0x80))
- 3134              		.loc 1 120 0
- 3135 0344 78349FE5 		ldr	r3, .L53+32
- 3136 0348 003093E5 		ldr	r3, [r3, #0]
- 3137 034c 803003E2 		and	r3, r3, #128
- 3138 0350 000053E3 		cmp	r3, #0
- 3139 0354 A400001A 		bne	.L46
- 121:../timer.c    **** 				{
- 122:../timer.c    **** 					selected_row = led8_count - 1; // Se resta uno para que el índice sea correcto (empezamos en 
- 3140              		.loc 1 122 0
- 3141 0358 60349FE5 		ldr	r3, .L53+28
- 3142 035c 003093E5 		ldr	r3, [r3, #0]
- 3143 0360 012043E2 		sub	r2, r3, #1
- 3144 0364 5C349FE5 		ldr	r3, .L53+36
- 3145 0368 002083E5 		str	r2, [r3, #0]
- 123:../timer.c    **** 					led8_count = 12;
- 3146              		.loc 1 123 0
- 3147 036c 4C349FE5 		ldr	r3, .L53+28
- 3148 0370 0C20A0E3 		mov	r2, #12
- 3149 0374 002083E5 		str	r2, [r3, #0]
- 124:../timer.c    **** 					sudoku_status = COLUMN_SELECTION;
- 3150              		.loc 1 124 0
- 3151 0378 38349FE5 		ldr	r3, .L53+20
- 3152 037c 0320A0E3 		mov	r2, #3
- 3153 0380 0020C3E5 		strb	r2, [r3, #0]
- 125:../timer.c    **** 				}
- 126:../timer.c    **** 				break;
- 3154              		.loc 1 126 0
- 3155 0384 9D0000EA 		b	.L27
- 3156              	.L24:
- 127:../timer.c    **** 			case COLUMN_SELECTION:
- 128:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
- 3157              		.loc 1 128 0
- 3158 0388 34349FE5 		ldr	r3, .L53+32
- 3159 038c 003093E5 		ldr	r3, [r3, #0]
- 3160 0390 403003E2 		and	r3, r3, #64
- 3161 0394 000053E3 		cmp	r3, #0
- 3162 0398 0B00001A 		bne	.L30
- 129:../timer.c    **** 				{
- 130:../timer.c    **** 					led8_count++;
- 3163              		.loc 1 130 0
- 3164 039c 1C349FE5 		ldr	r3, .L53+28
- 3165 03a0 003093E5 		ldr	r3, [r3, #0]
- 3166 03a4 012083E2 		add	r2, r3, #1
- 3167 03a8 10349FE5 		ldr	r3, .L53+28
- 3168 03ac 002083E5 		str	r2, [r3, #0]
- 131:../timer.c    **** 
- 132:../timer.c    **** 					if (led8_count > 9)
- 3169              		.loc 1 132 0
- 3170 03b0 08349FE5 		ldr	r3, .L53+28
- 3171 03b4 003093E5 		ldr	r3, [r3, #0]
- 3172 03b8 090053E3 		cmp	r3, #9
- 3173 03bc 020000DA 		ble	.L30
- 133:../timer.c    **** 					{
- 134:../timer.c    **** 						led8_count = 1;
- 3174              		.loc 1 134 0
- 3175 03c0 F8339FE5 		ldr	r3, .L53+28
- 3176 03c4 0120A0E3 		mov	r2, #1
- 3177 03c8 002083E5 		str	r2, [r3, #0]
- 3178              	.L30:
- 135:../timer.c    **** 					}
- 136:../timer.c    **** 				}
- 137:../timer.c    **** 
- 138:../timer.c    **** 				if (!(rPDATG & 0x80))
- 3179              		.loc 1 138 0
- 3180 03cc F0339FE5 		ldr	r3, .L53+32
- 3181 03d0 003093E5 		ldr	r3, [r3, #0]
- 3182 03d4 803003E2 		and	r3, r3, #128
- 3183 03d8 000053E3 		cmp	r3, #0
- 3184 03dc 8400001A 		bne	.L47
- 139:../timer.c    **** 				{
- 140:../timer.c    **** 					selected_column = led8_count - 1; // Se resta uno para que el índice sea correcto (empezamos 
- 3185              		.loc 1 140 0
- 3186 03e0 D8339FE5 		ldr	r3, .L53+28
- 3187 03e4 003093E5 		ldr	r3, [r3, #0]
- 3188 03e8 012043E2 		sub	r2, r3, #1
- 3189 03ec D8339FE5 		ldr	r3, .L53+40
- 3190 03f0 002083E5 		str	r2, [r3, #0]
- 141:../timer.c    **** 
- 142:../timer.c    **** 					if (cuadricula[selected_row][selected_column] & 0x8000) // comprobar si la celda es una pista
- 3191              		.loc 1 142 0
- 3192 03f4 CC339FE5 		ldr	r3, .L53+36
- 3193 03f8 001093E5 		ldr	r1, [r3, #0]
- 3194 03fc C8339FE5 		ldr	r3, .L53+40
- 3195 0400 003093E5 		ldr	r3, [r3, #0]
- 3196 0404 B0239FE5 		ldr	r2, .L53+24
- 3197 0408 0112A0E1 		mov	r1, r1, asl #4
- 3198 040c 033081E0 		add	r3, r1, r3
- 3199 0410 8330A0E1 		mov	r3, r3, asl #1
- 3200 0414 033082E0 		add	r3, r2, r3
- 3201 0418 B030D3E1 		ldrh	r3, [r3, #0]
- 3202 041c 0338A0E1 		mov	r3, r3, asl #16
- 3203 0420 2338A0E1 		mov	r3, r3, lsr #16
- 3204 0424 0338A0E1 		mov	r3, r3, asl #16
- 3205 0428 4338A0E1 		mov	r3, r3, asr #16
- 3206 042c 000053E3 		cmp	r3, #0
- 3207 0430 060000AA 		bge	.L32
- 143:../timer.c    **** 					{
- 144:../timer.c    **** 						sudoku_status = ROW_SELECTION;
- 3208              		.loc 1 144 0
- 3209 0434 7C339FE5 		ldr	r3, .L53+20
- 3210 0438 0220A0E3 		mov	r2, #2
- 3211 043c 0020C3E5 		strb	r2, [r3, #0]
- 145:../timer.c    **** 						led8_count = 15;
- 3212              		.loc 1 145 0
- 3213 0440 78339FE5 		ldr	r3, .L53+28
- 3214 0444 0F20A0E3 		mov	r2, #15
- 3215 0448 002083E5 		str	r2, [r3, #0]
- 146:../timer.c    **** 					}
- 147:../timer.c    **** 					else
+  69:../timer.c    **** 	pISR_TIMER0 = (unsigned)timer_ISR; // Dirección de la ISR del Timer 0
+ 3222              		.loc 1 69 0
+ 3223 01a8 84309FE5 		ldr	r3, .L6+8
+ 3224 01ac 84209FE5 		ldr	r2, .L6+12
+ 3225 01b0 002083E5 		str	r2, [r3, #0]
+  70:../timer.c    **** 
+  71:../timer.c    **** 	rTCFG0 = (79 << 0);	 // Preescalador para Timer0: 79
+ 3226              		.loc 1 71 0
+ 3227 01b4 80309FE5 		ldr	r3, .L6+16
+ 3228 01b8 4F20A0E3 		mov	r2, #79
+ 3229 01bc 002083E5 		str	r2, [r3, #0]
+  72:../timer.c    **** 	rTCFG1 = (0x3 << 0); // Divisor de 8 para Timer0
+ 3230              		.loc 1 72 0
+ 3231 01c0 78309FE5 		ldr	r3, .L6+20
+ 3232 01c4 0320A0E3 		mov	r2, #3
+ 3233 01c8 002083E5 		str	r2, [r3, #0]
+  73:../timer.c    **** 
+  74:../timer.c    **** 	rTCNTB0 = 100000; // Valor del contador para 1 Hz (1 segundo)
+ 3234              		.loc 1 74 0
+ 3235 01cc 70309FE5 		ldr	r3, .L6+24
+ 3236 01d0 70209FE5 		ldr	r2, .L6+28
+ 3237 01d4 002083E5 		str	r2, [r3, #0]
+  75:../timer.c    **** 	rTCMPB0 = 0x0;		// No se usa el comparador
+ 3238              		.loc 1 75 0
+ 3239 01d8 6C309FE5 		ldr	r3, .L6+32
+ 3240 01dc 0020A0E3 		mov	r2, #0
+ 3241 01e0 002083E5 		str	r2, [r3, #0]
+  76:../timer.c    **** 
+  77:../timer.c    **** 	rTCON |= (1 << 1);	// Actualización manual de los registros
+ 3242              		.loc 1 77 0
+ 3243 01e4 64309FE5 		ldr	r3, .L6+36
+ 3244 01e8 60209FE5 		ldr	r2, .L6+36
+ 3245 01ec 002092E5 		ldr	r2, [r2, #0]
+ 3246 01f0 022082E3 		orr	r2, r2, #2
+ 3247 01f4 002083E5 		str	r2, [r3, #0]
+  78:../timer.c    **** 	rTCON &= ~(1 << 1); // Limpiar el bit de actualización manual
+ 3248              		.loc 1 78 0
+ 3249 01f8 50309FE5 		ldr	r3, .L6+36
+ 3250 01fc 4C209FE5 		ldr	r2, .L6+36
+ 3251 0200 002092E5 		ldr	r2, [r2, #0]
+ 3252 0204 0220C2E3 		bic	r2, r2, #2
+ 3253 0208 002083E5 		str	r2, [r3, #0]
+  79:../timer.c    **** 
+  80:../timer.c    **** 	rTCON = (rTCON & ~(0x1 << 3)) | (0x1 << 3) | (0x1 << 0); // Auto-reload y Start
+ 3254              		.loc 1 80 0
+ 3255 020c 3C309FE5 		ldr	r3, .L6+36
+ 3256 0210 38209FE5 		ldr	r2, .L6+36
+ 3257 0214 002092E5 		ldr	r2, [r2, #0]
+ 3258 0218 092082E3 		orr	r2, r2, #9
+ 3259 021c 002083E5 		str	r2, [r3, #0]
+  81:../timer.c    **** }
+ 3260              		.loc 1 81 0
+ 3261 0220 0CD04BE2 		sub	sp, fp, #12
+ 3262 0224 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 3263 0228 1EFF2FE1 		bx	lr
+ 3264              	.L7:
+ 3265              		.align	2
+ 3266              	.L6:
+ 3267 022c 0800E001 		.word	31457288
+ 3268 0230 0C00E001 		.word	31457292
+ 3269 0234 54FF7F0C 		.word	209715028
+ 3270 0238 00000000 		.word	timer_ISR
+ 3271 023c 0000D501 		.word	30736384
+ 3272 0240 0400D501 		.word	30736388
+ 3273 0244 0C00D501 		.word	30736396
+ 3274 0248 A0860100 		.word	100000
+ 3275 024c 1000D501 		.word	30736400
+ 3276 0250 0800D501 		.word	30736392
+ 3277              		.cfi_endproc
+ 3278              	.LFE1:
+ 3280              		.align	2
+ 3281              		.global	timer1_inicializar
+ 3283              	timer1_inicializar:
+ 3284              	.LFB2:
+  82:../timer.c    **** 
+  83:../timer.c    **** void timer1_inicializar(void)
+  84:../timer.c    **** {
+ 3285              		.loc 1 84 0
+ 3286              		.cfi_startproc
+ 3287              		@ Function supports interworking.
+ 3288              		@ args = 0, pretend = 0, frame = 0
+ 3289              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3290 0254 0DC0A0E1 		mov	ip, sp
+ 3291              	.LCFI4:
+ 3292              		.cfi_def_cfa_register 12
+ 3293 0258 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 3294 025c 04B04CE2 		sub	fp, ip, #4
+ 3295              		.cfi_offset 14, -8
+ 3296              		.cfi_offset 13, -12
+ 3297              		.cfi_offset 11, -16
+ 3298              	.LCFI5:
+ 3299              		.cfi_def_cfa 11, 4
+  85:../timer.c    **** 	rINTMOD = 0x0; // Configura las lineas como de tipo IRQ
+ 3300              		.loc 1 85 0
+ 3301 0260 AC309FE5 		ldr	r3, .L9
+ 3302 0264 0020A0E3 		mov	r2, #0
+ 3303 0268 002083E5 		str	r2, [r3, #0]
+  86:../timer.c    **** 	rINTCON = 0x1; // Habilita int vectorizadas y la linea IRQ (FIQ no)
+ 3304              		.loc 1 86 0
+ 3305 026c 1E36A0E3 		mov	r3, #31457280
+ 3306 0270 0120A0E3 		mov	r2, #1
+ 3307 0274 002083E5 		str	r2, [r3, #0]
+  87:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER1);
+ 3308              		.loc 1 87 0
+ 3309 0278 98309FE5 		ldr	r3, .L9+4
+ 3310 027c 94209FE5 		ldr	r2, .L9+4
+ 3311 0280 002092E5 		ldr	r2, [r2, #0]
+ 3312 0284 012AC2E3 		bic	r2, r2, #4096
+ 3313 0288 002083E5 		str	r2, [r3, #0]
+  88:../timer.c    **** 
+  89:../timer.c    **** 	pISR_TIMER1 = (unsigned)timer1_ISR;
+ 3314              		.loc 1 89 0
+ 3315 028c 88309FE5 		ldr	r3, .L9+8
+ 3316 0290 88209FE5 		ldr	r2, .L9+12
+ 3317 0294 002083E5 		str	r2, [r3, #0]
+  90:../timer.c    **** 
+  91:../timer.c    **** 	// Configuracion del Timer1
+  92:../timer.c    **** 	rTCFG0 = 255;
+ 3318              		.loc 1 92 0
+ 3319 0298 84309FE5 		ldr	r3, .L9+16
+ 3320 029c FF20A0E3 		mov	r2, #255
+ 3321 02a0 002083E5 		str	r2, [r3, #0]
+  93:../timer.c    **** 	rTCFG1 = 0x0;
+ 3322              		.loc 1 93 0
+ 3323 02a4 7C309FE5 		ldr	r3, .L9+20
+ 3324 02a8 0020A0E3 		mov	r2, #0
+ 3325 02ac 002083E5 		str	r2, [r3, #0]
+  94:../timer.c    **** 
+  95:../timer.c    **** 	rTCNTB1 = 64000;
+ 3326              		.loc 1 95 0
+ 3327 02b0 74309FE5 		ldr	r3, .L9+24
+ 3328 02b4 FA2CA0E3 		mov	r2, #64000
+ 3329 02b8 002083E5 		str	r2, [r3, #0]
+  96:../timer.c    **** 	rTCMPB1 = 0x0;
+ 3330              		.loc 1 96 0
+ 3331 02bc 6C309FE5 		ldr	r3, .L9+28
+ 3332 02c0 0020A0E3 		mov	r2, #0
+ 3333 02c4 002083E5 		str	r2, [r3, #0]
+  97:../timer.c    **** 
+  98:../timer.c    **** 	rTCON |= (1 << 9);																				// Set bit 9 (update=manual)
+ 3334              		.loc 1 98 0
+ 3335 02c8 64309FE5 		ldr	r3, .L9+32
+ 3336 02cc 60209FE5 		ldr	r2, .L9+32
+ 3337 02d0 002092E5 		ldr	r2, [r2, #0]
+ 3338 02d4 022C82E3 		orr	r2, r2, #512
+ 3339 02d8 002083E5 		str	r2, [r3, #0]
+  99:../timer.c    **** 	rTCON &= ~(1 << 11);																			// Clear bit 11 (auto-reload off)
+ 3340              		.loc 1 99 0
+ 3341 02dc 50309FE5 		ldr	r3, .L9+32
+ 3342 02e0 4C209FE5 		ldr	r2, .L9+32
+ 3343 02e4 002092E5 		ldr	r2, [r2, #0]
+ 3344 02e8 022BC2E3 		bic	r2, r2, #2048
+ 3345 02ec 002083E5 		str	r2, [r3, #0]
+ 100:../timer.c    **** 	rTCON = (rTCON & ~(0x1 << 9)) | (0x1 << 11) | (0x1 << 8); // Clear bit 9 and set bit 11 (update=ma
+ 3346              		.loc 1 100 0
+ 3347 02f0 3C309FE5 		ldr	r3, .L9+32
+ 3348 02f4 38209FE5 		ldr	r2, .L9+32
+ 3349 02f8 002092E5 		ldr	r2, [r2, #0]
+ 3350 02fc 0B2CC2E3 		bic	r2, r2, #2816
+ 3351 0300 092C82E3 		orr	r2, r2, #2304
+ 3352 0304 002083E5 		str	r2, [r3, #0]
+ 101:../timer.c    **** }
+ 3353              		.loc 1 101 0
+ 3354 0308 0CD04BE2 		sub	sp, fp, #12
+ 3355 030c 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 3356 0310 1EFF2FE1 		bx	lr
+ 3357              	.L10:
+ 3358              		.align	2
+ 3359              	.L9:
+ 3360 0314 0800E001 		.word	31457288
+ 3361 0318 0C00E001 		.word	31457292
+ 3362 031c 50FF7F0C 		.word	209715024
+ 3363 0320 00000000 		.word	timer1_ISR
+ 3364 0324 0000D501 		.word	30736384
+ 3365 0328 0400D501 		.word	30736388
+ 3366 032c 1800D501 		.word	30736408
+ 3367 0330 1C00D501 		.word	30736412
+ 3368 0334 0800D501 		.word	30736392
+ 3369              		.cfi_endproc
+ 3370              	.LFE2:
+ 3372              		.align	2
+ 3373              		.global	timer1_ISR
+ 3375              	timer1_ISR:
+ 3376              	.LFB3:
+ 102:../timer.c    **** 
+ 103:../timer.c    **** void timer1_ISR(void)
+ 104:../timer.c    **** {
+ 3377              		.loc 1 104 0
+ 3378              		.cfi_startproc
+ 3379              		@ Interrupt Service Routine.
+ 3380              		@ args = 0, pretend = 0, frame = 0
+ 3381              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3382 0338 04C02DE5 		str	ip, [sp, #-4]!
+ 3383 033c 0DC0A0E1 		mov	ip, sp
+ 3384              	.LCFI6:
+ 3385              		.cfi_def_cfa_register 12
+ 3386 0340 3FD82DE9 		stmfd	sp!, {r0, r1, r2, r3, r4, r5, fp, ip, lr, pc}
+ 3387 0344 04B04CE2 		sub	fp, ip, #4
+ 3388              		.cfi_offset 14, -8
+ 3389              		.cfi_offset 13, -12
+ 3390              		.cfi_offset 11, -16
+ 3391              		.cfi_offset 5, -20
+ 3392              		.cfi_offset 4, -24
+ 3393              		.cfi_offset 3, -28
+ 3394              		.cfi_offset 2, -32
+ 3395              		.cfi_offset 1, -36
+ 3396              		.cfi_offset 0, -40
+ 3397              	.LCFI7:
+ 3398              		.cfi_def_cfa 11, 4
+ 105:../timer.c    **** 	timer1_num_int++; // Incrementar el contador de ciclos completos
+ 3399              		.loc 1 105 0
+ 3400 0348 34369FE5 		ldr	r3, .L53
+ 3401 034c 003093E5 		ldr	r3, [r3, #0]
+ 3402 0350 012083E2 		add	r2, r3, #1
+ 3403 0354 28369FE5 		ldr	r3, .L53
+ 3404 0358 002083E5 		str	r2, [r3, #0]
+ 106:../timer.c    **** 	// Maquina de estados
+ 107:../timer.c    **** 	switch (button_state)
+ 3405              		.loc 1 107 0
+ 3406 035c 24369FE5 		ldr	r3, .L53+4
+ 3407 0360 0030D3E5 		ldrb	r3, [r3, #0]
+ 3408 0364 FF3003E2 		and	r3, r3, #255
+ 3409 0368 030053E3 		cmp	r3, #3
+ 3410 036c 03F19F97 		ldrls	pc, [pc, r3, asl #2]
+ 3411 0370 710100EA 		b	.L12
+ 3412              	.L17:
+ 3413 0374 84030000 		.word	.L13
+ 3414 0378 C0030000 		.word	.L14
+ 3415 037c C4080000 		.word	.L15
+ 3416 0380 4C080000 		.word	.L16
+ 3417              	.L13:
+ 108:../timer.c    **** 	{
+ 109:../timer.c    **** 	case WAITING:
+ 110:../timer.c    **** 		if (button_flag == 1)
+ 3418              		.loc 1 110 0
+ 3419 0384 00369FE5 		ldr	r3, .L53+8
+ 3420 0388 003093E5 		ldr	r3, [r3, #0]
+ 3421 038c 010053E3 		cmp	r3, #1
+ 3422 0390 6D01001A 		bne	.L46
+ 111:../timer.c    **** 		{
+ 112:../timer.c    **** 			button_state = PRESSED;
+ 3423              		.loc 1 112 0
+ 3424 0394 EC359FE5 		ldr	r3, .L53+4
+ 3425 0398 0120A0E3 		mov	r2, #1
+ 3426 039c 0020C3E5 		strb	r2, [r3, #0]
+ 113:../timer.c    **** 			last_timer_value = timer1_leer();
+ 3427              		.loc 1 113 0
+ 3428 03a0 FEFFFFEB 		bl	timer1_leer
+ 3429 03a4 0020A0E1 		mov	r2, r0
+ 3430 03a8 E0359FE5 		ldr	r3, .L53+12
+ 3431 03ac 002083E5 		str	r2, [r3, #0]
+ 114:../timer.c    **** 			button_flag = 0;
+ 3432              		.loc 1 114 0
+ 3433 03b0 D4359FE5 		ldr	r3, .L53+8
+ 3434 03b4 0020A0E3 		mov	r2, #0
+ 3435 03b8 002083E5 		str	r2, [r3, #0]
+ 115:../timer.c    **** 		}
+ 116:../timer.c    **** 		break;
+ 3436              		.loc 1 116 0
+ 3437 03bc 670100EA 		b	.L19
+ 3438              	.L14:
+ 117:../timer.c    **** 
+ 118:../timer.c    **** 	case PRESSED:
+ 119:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > TRP)
+ 3439              		.loc 1 119 0
+ 3440 03c0 FEFFFFEB 		bl	timer1_leer
+ 3441 03c4 0020A0E1 		mov	r2, r0
+ 3442 03c8 C0359FE5 		ldr	r3, .L53+12
+ 3443 03cc 003093E5 		ldr	r3, [r3, #0]
+ 3444 03d0 022063E0 		rsb	r2, r3, r2
+ 3445 03d4 B8359FE5 		ldr	r3, .L53+16
+ 3446 03d8 003093E5 		ldr	r3, [r3, #0]
+ 3447 03dc 030052E1 		cmp	r2, r3
+ 3448 03e0 5B01009A 		bls	.L47
+ 3449              	.LBB3:
+ 120:../timer.c    **** 		{
+ 121:../timer.c    **** 			switch (sudoku_status)
+ 3450              		.loc 1 121 0
+ 3451 03e4 AC359FE5 		ldr	r3, .L53+20
+ 3452 03e8 0030D3E5 		ldrb	r3, [r3, #0]
+ 3453 03ec FF3003E2 		and	r3, r3, #255
+ 3454 03f0 040053E3 		cmp	r3, #4
+ 3455 03f4 03F19F97 		ldrls	pc, [pc, r3, asl #2]
+ 3456 03f8 F10000EA 		b	.L48
+ 3457              	.L27:
+ 3458 03fc C4070000 		.word	.L48
+ 3459 0400 10040000 		.word	.L23
+ 3460 0404 7C040000 		.word	.L24
+ 3461 0408 20050000 		.word	.L25
+ 3462 040c 20060000 		.word	.L26
+ 3463              	.L23:
+ 122:../timer.c    **** 			{
+ 123:../timer.c    **** 			case NOT_STARTED:
+ 124:../timer.c    **** 				break;
+ 125:../timer.c    **** 			case STARTED:
+ 126:../timer.c    **** 				push_debug(5, 5, timer1_leer());
+ 3464              		.loc 1 126 0
+ 3465 0410 FEFFFFEB 		bl	timer1_leer
+ 3466 0414 0030A0E1 		mov	r3, r0
+ 3467 0418 0500A0E3 		mov	r0, #5
+ 3468 041c 0510A0E3 		mov	r1, #5
+ 3469 0420 0320A0E1 		mov	r2, r3
+ 3470 0424 FEFFFFEB 		bl	push_debug
+ 127:../timer.c    **** 				sudoku_candidatos_init_arm(cuadricula, 1);
+ 3471              		.loc 1 127 0
+ 3472 0428 6C059FE5 		ldr	r0, .L53+24
+ 3473 042c 0110A0E3 		mov	r1, #1
+ 3474 0430 FEFFFFEB 		bl	sudoku_candidatos_init_arm
+ 128:../timer.c    **** 				push_debug(5, 5, timer1_leer());
+ 3475              		.loc 1 128 0
+ 3476 0434 FEFFFFEB 		bl	timer1_leer
+ 3477 0438 0030A0E1 		mov	r3, r0
+ 3478 043c 0500A0E3 		mov	r0, #5
+ 3479 0440 0510A0E3 		mov	r1, #5
+ 3480 0444 0320A0E1 		mov	r2, r3
+ 3481 0448 FEFFFFEB 		bl	push_debug
+ 129:../timer.c    **** 				led8_count = 15; // Indicar que se debe seleccionar la fila con una F en el 8led
+ 3482              		.loc 1 129 0
+ 3483 044c 4C359FE5 		ldr	r3, .L53+28
+ 3484 0450 0F20A0E3 		mov	r2, #15
+ 3485 0454 002083E5 		str	r2, [r3, #0]
+ 130:../timer.c    **** 				sudoku_status = ROW_SELECTION;
+ 3486              		.loc 1 130 0
+ 3487 0458 38359FE5 		ldr	r3, .L53+20
+ 3488 045c 0220A0E3 		mov	r2, #2
+ 3489 0460 0020C3E5 		strb	r2, [r3, #0]
+ 131:../timer.c    **** 				game_started = 1;
+ 3490              		.loc 1 131 0
+ 3491 0464 38359FE5 		ldr	r3, .L53+32
+ 3492 0468 0120A0E3 		mov	r2, #1
+ 3493 046c 002083E5 		str	r2, [r3, #0]
+ 132:../timer.c    **** 				LCD_mostrar_sudoku(cuadricula);
+ 3494              		.loc 1 132 0
+ 3495 0470 24059FE5 		ldr	r0, .L53+24
+ 3496 0474 FEFFFFEB 		bl	LCD_mostrar_sudoku
+ 133:../timer.c    **** 				break;
+ 3497              		.loc 1 133 0
+ 3498 0478 D80000EA 		b	.L28
+ 3499              	.L24:
+ 134:../timer.c    **** 			case ROW_SELECTION:
+ 135:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+ 3500              		.loc 1 135 0
+ 3501 047c 24359FE5 		ldr	r3, .L53+36
+ 3502 0480 003093E5 		ldr	r3, [r3, #0]
+ 3503 0484 403003E2 		and	r3, r3, #64
+ 3504 0488 000053E3 		cmp	r3, #0
+ 3505 048c 0B00001A 		bne	.L29
+ 136:../timer.c    **** 				{
+ 137:../timer.c    **** 					led8_count++;
+ 3506              		.loc 1 137 0
+ 3507 0490 08359FE5 		ldr	r3, .L53+28
+ 3508 0494 003093E5 		ldr	r3, [r3, #0]
+ 3509 0498 012083E2 		add	r2, r3, #1
+ 3510 049c FC349FE5 		ldr	r3, .L53+28
+ 3511 04a0 002083E5 		str	r2, [r3, #0]
+ 138:../timer.c    **** 
+ 139:../timer.c    **** 					if (led8_count > 9)
+ 3512              		.loc 1 139 0
+ 3513 04a4 F4349FE5 		ldr	r3, .L53+28
+ 3514 04a8 003093E5 		ldr	r3, [r3, #0]
+ 3515 04ac 090053E3 		cmp	r3, #9
+ 3516 04b0 020000DA 		ble	.L29
+ 140:../timer.c    **** 					{
+ 141:../timer.c    **** 						led8_count = 1;
+ 3517              		.loc 1 141 0
+ 3518 04b4 E4349FE5 		ldr	r3, .L53+28
+ 3519 04b8 0120A0E3 		mov	r2, #1
+ 3520 04bc 002083E5 		str	r2, [r3, #0]
+ 3521              	.L29:
+ 142:../timer.c    **** 					}
+ 143:../timer.c    **** 				}
+ 144:../timer.c    **** 
+ 145:../timer.c    **** 				if (!(rPDATG & 0x80))
+ 3522              		.loc 1 145 0
+ 3523 04c0 E0349FE5 		ldr	r3, .L53+36
+ 3524 04c4 003093E5 		ldr	r3, [r3, #0]
+ 3525 04c8 803003E2 		and	r3, r3, #128
+ 3526 04cc 000053E3 		cmp	r3, #0
+ 3527 04d0 BD00001A 		bne	.L49
+ 146:../timer.c    **** 				{
+ 147:../timer.c    **** 					if (led8_count > 9)
+ 3528              		.loc 1 147 0
+ 3529 04d4 C4349FE5 		ldr	r3, .L53+28
+ 3530 04d8 003093E5 		ldr	r3, [r3, #0]
+ 3531 04dc 090053E3 		cmp	r3, #9
+ 3532 04e0 020000DA 		ble	.L31
  148:../timer.c    **** 					{
- 149:../timer.c    **** 						sudoku_status = VALUE_SELECTION;
- 150:../timer.c    **** 						led8_count = 0;
- 151:../timer.c    **** 					}
- 152:../timer.c    **** 				}
- 153:../timer.c    **** 				break;
- 3216              		.loc 1 153 0
- 3217 044c 6B0000EA 		b	.L27
- 3218              	.L32:
- 149:../timer.c    **** 						sudoku_status = VALUE_SELECTION;
- 3219              		.loc 1 149 0
- 3220 0450 60339FE5 		ldr	r3, .L53+20
- 3221 0454 0420A0E3 		mov	r2, #4
- 3222 0458 0020C3E5 		strb	r2, [r3, #0]
- 150:../timer.c    **** 						led8_count = 0;
- 3223              		.loc 1 150 0
- 3224 045c 5C339FE5 		ldr	r3, .L53+28
- 3225 0460 0020A0E3 		mov	r2, #0
- 3226 0464 002083E5 		str	r2, [r3, #0]
- 3227              		.loc 1 153 0
- 3228 0468 640000EA 		b	.L27
- 3229              	.L25:
- 154:../timer.c    **** 			case VALUE_SELECTION:
- 155:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
- 3230              		.loc 1 155 0
- 3231 046c 50339FE5 		ldr	r3, .L53+32
- 3232 0470 003093E5 		ldr	r3, [r3, #0]
- 3233 0474 403003E2 		and	r3, r3, #64
- 3234 0478 000053E3 		cmp	r3, #0
- 3235 047c 0B00001A 		bne	.L33
- 156:../timer.c    **** 				{
- 157:../timer.c    **** 					led8_count++;
- 3236              		.loc 1 157 0
- 3237 0480 38339FE5 		ldr	r3, .L53+28
- 3238 0484 003093E5 		ldr	r3, [r3, #0]
- 3239 0488 012083E2 		add	r2, r3, #1
- 3240 048c 2C339FE5 		ldr	r3, .L53+28
- 3241 0490 002083E5 		str	r2, [r3, #0]
- 158:../timer.c    **** 					if (led8_count > 9)
- 3242              		.loc 1 158 0
- 3243 0494 24339FE5 		ldr	r3, .L53+28
- 3244 0498 003093E5 		ldr	r3, [r3, #0]
- 3245 049c 090053E3 		cmp	r3, #9
- 3246 04a0 020000DA 		ble	.L33
- 159:../timer.c    **** 					{
- 160:../timer.c    **** 						led8_count = 0;
- 3247              		.loc 1 160 0
- 3248 04a4 14339FE5 		ldr	r3, .L53+28
- 3249 04a8 0020A0E3 		mov	r2, #0
- 3250 04ac 002083E5 		str	r2, [r3, #0]
- 3251              	.L33:
- 161:../timer.c    **** 					}
- 162:../timer.c    **** 				}
- 163:../timer.c    **** 
- 164:../timer.c    **** 				if (!(rPDATG & 0x80))
- 3252              		.loc 1 164 0
- 3253 04b0 0C339FE5 		ldr	r3, .L53+32
- 3254 04b4 003093E5 		ldr	r3, [r3, #0]
- 3255 04b8 803003E2 		and	r3, r3, #128
- 3256 04bc 000053E3 		cmp	r3, #0
- 3257 04c0 4D00001A 		bne	.L48
- 165:../timer.c    **** 				{
- 166:../timer.c    **** 					celda_poner_valor(&cuadricula[selected_row][selected_column], led8_count);
- 3258              		.loc 1 166 0
- 3259 04c4 F0229FE5 		ldr	r2, .L53+24
- 3260 04c8 F8329FE5 		ldr	r3, .L53+36
- 3261 04cc 003093E5 		ldr	r3, [r3, #0]
- 3262 04d0 0312A0E1 		mov	r1, r3, asl #4
- 3263 04d4 F0329FE5 		ldr	r3, .L53+40
- 3264 04d8 003093E5 		ldr	r3, [r3, #0]
- 3265 04dc 033081E0 		add	r3, r1, r3
- 3266 04e0 8330A0E1 		mov	r3, r3, asl #1
- 3267 04e4 032082E0 		add	r2, r2, r3
- 3268 04e8 D0329FE5 		ldr	r3, .L53+28
- 3269 04ec 003093E5 		ldr	r3, [r3, #0]
- 3270 04f0 FF3003E2 		and	r3, r3, #255
- 3271 04f4 0200A0E1 		mov	r0, r2
- 3272 04f8 0310A0E1 		mov	r1, r3
- 3273 04fc FEFFFFEB 		bl	celda_poner_valor
- 167:../timer.c    **** 					cuadricula_candidatos_verificar(cuadricula, selected_row, selected_column);
- 3274              		.loc 1 167 0
- 3275 0500 C0329FE5 		ldr	r3, .L53+36
- 3276 0504 002093E5 		ldr	r2, [r3, #0]
- 3277 0508 BC329FE5 		ldr	r3, .L53+40
- 3278 050c 003093E5 		ldr	r3, [r3, #0]
- 3279 0510 A4029FE5 		ldr	r0, .L53+24
- 3280 0514 0210A0E1 		mov	r1, r2
- 3281 0518 0320A0E1 		mov	r2, r3
- 3282 051c FEFFFFEB 		bl	cuadricula_candidatos_verificar
- 168:../timer.c    **** 
- 169:../timer.c    **** 					if (cuadricula[selected_row][selected_column] & 0x4000) // Comprobar si hay errores
- 3283              		.loc 1 169 0
- 3284 0520 A0329FE5 		ldr	r3, .L53+36
- 3285 0524 001093E5 		ldr	r1, [r3, #0]
- 3286 0528 9C329FE5 		ldr	r3, .L53+40
- 3287 052c 003093E5 		ldr	r3, [r3, #0]
- 3288 0530 84229FE5 		ldr	r2, .L53+24
- 3289 0534 0112A0E1 		mov	r1, r1, asl #4
- 3290 0538 033081E0 		add	r3, r1, r3
- 3291 053c 8330A0E1 		mov	r3, r3, asl #1
- 3292 0540 033082E0 		add	r3, r2, r3
- 3293 0544 B030D3E1 		ldrh	r3, [r3, #0]
- 3294 0548 013903E2 		and	r3, r3, #16384
- 3295 054c 000053E3 		cmp	r3, #0
- 3296 0550 0600000A 		beq	.L35
- 170:../timer.c    **** 					{
- 171:../timer.c    **** 						led8_count = 14; // Indicar error con una E en el 8led
- 3297              		.loc 1 171 0
- 3298 0554 64329FE5 		ldr	r3, .L53+28
- 3299 0558 0E20A0E3 		mov	r2, #14
- 3300 055c 002083E5 		str	r2, [r3, #0]
- 172:../timer.c    **** 						modifying_value = 1;
- 3301              		.loc 1 172 0
- 3302 0560 68329FE5 		ldr	r3, .L53+44
- 3303 0564 0120A0E3 		mov	r2, #1
- 3304 0568 002083E5 		str	r2, [r3, #0]
- 173:../timer.c    **** 						break;
- 3305              		.loc 1 173 0
- 3306 056c 230000EA 		b	.L27
- 3307              	.L35:
- 174:../timer.c    **** 					}
- 175:../timer.c    **** 					else // Si no hay errores, propagar el valor de la celda
- 176:../timer.c    **** 					{
- 177:../timer.c    **** 						if (modifying_value)
- 3308              		.loc 1 177 0
- 3309 0570 58329FE5 		ldr	r3, .L53+44
- 3310 0574 003093E5 		ldr	r3, [r3, #0]
- 3311 0578 000053E3 		cmp	r3, #0
- 3312 057c 0600000A 		beq	.L36
- 178:../timer.c    **** 						{
- 179:../timer.c    **** 							sudoku_candidatos_init_arm(cuadricula, 1);
- 3313              		.loc 1 179 0
- 3314 0580 34029FE5 		ldr	r0, .L53+24
- 3315 0584 0110A0E3 		mov	r1, #1
- 3316 0588 FEFFFFEB 		bl	sudoku_candidatos_init_arm
- 180:../timer.c    **** 							modifying_value = 0;
- 3317              		.loc 1 180 0
- 3318 058c 3C329FE5 		ldr	r3, .L53+44
- 3319 0590 0020A0E3 		mov	r2, #0
- 3320 0594 002083E5 		str	r2, [r3, #0]
- 3321 0598 0A0000EA 		b	.L37
- 3322              	.L36:
- 181:../timer.c    **** 						}
- 182:../timer.c    **** 						else
- 183:../timer.c    **** 						{
- 184:../timer.c    **** 							sudoku_candidatos_propagar_arm(cuadricula, selected_row, selected_column, led8_count);
- 3323              		.loc 1 184 0
- 3324 059c 24329FE5 		ldr	r3, .L53+36
- 3325 05a0 003093E5 		ldr	r3, [r3, #0]
- 3326 05a4 FF1003E2 		and	r1, r3, #255
- 3327 05a8 1C329FE5 		ldr	r3, .L53+40
- 3328 05ac 003093E5 		ldr	r3, [r3, #0]
- 3329 05b0 FF2003E2 		and	r2, r3, #255
- 3330 05b4 04329FE5 		ldr	r3, .L53+28
- 3331 05b8 003093E5 		ldr	r3, [r3, #0]
- 3332 05bc FF3003E2 		and	r3, r3, #255
- 3333 05c0 F4019FE5 		ldr	r0, .L53+24
- 3334 05c4 FEFFFFEB 		bl	sudoku_candidatos_propagar_arm
- 3335              	.L37:
- 185:../timer.c    **** 						}
- 186:../timer.c    **** 
- 187:../timer.c    **** 						led8_count = 15;
- 3336              		.loc 1 187 0
- 3337 05c8 F0319FE5 		ldr	r3, .L53+28
- 3338 05cc 0F20A0E3 		mov	r2, #15
- 3339 05d0 002083E5 		str	r2, [r3, #0]
- 188:../timer.c    **** 						sudoku_status = ROW_SELECTION;
- 3340              		.loc 1 188 0
- 3341 05d4 DC319FE5 		ldr	r3, .L53+20
- 3342 05d8 0220A0E3 		mov	r2, #2
- 3343 05dc 0020C3E5 		strb	r2, [r3, #0]
- 189:../timer.c    **** 					}
- 190:../timer.c    **** 				}
- 191:../timer.c    **** 
- 192:../timer.c    **** 				break;
- 3344              		.loc 1 192 0
- 3345 05e0 060000EA 		b	.L27
- 3346              	.L45:
- 193:../timer.c    **** 			default:
- 194:../timer.c    **** 				break;
- 3347              		.loc 1 194 0
- 3348 05e4 0000A0E1 		mov	r0, r0	@ nop
- 3349 05e8 040000EA 		b	.L27
- 3350              	.L46:
- 126:../timer.c    **** 				break;
- 3351              		.loc 1 126 0
- 3352 05ec 0000A0E1 		mov	r0, r0	@ nop
- 3353 05f0 020000EA 		b	.L27
- 3354              	.L47:
- 153:../timer.c    **** 				break;
- 3355              		.loc 1 153 0
- 3356 05f4 0000A0E1 		mov	r0, r0	@ nop
- 3357 05f8 000000EA 		b	.L27
- 3358              	.L48:
- 192:../timer.c    **** 				break;
- 3359              		.loc 1 192 0
- 3360 05fc 0000A0E1 		mov	r0, r0	@ nop
- 3361              	.L27:
- 195:../timer.c    **** 			}
- 196:../timer.c    **** 
- 197:../timer.c    **** 			D8Led_symbol(led8_count & 0xf);
- 3362              		.loc 1 197 0
- 3363 0600 B8319FE5 		ldr	r3, .L53+28
- 3364 0604 003093E5 		ldr	r3, [r3, #0]
- 3365 0608 0F3003E2 		and	r3, r3, #15
- 3366 060c 0300A0E1 		mov	r0, r3
- 3367 0610 FEFFFFEB 		bl	D8Led_symbol
+ 149:../timer.c    **** 						led8_count = 1;
+ 3533              		.loc 1 149 0
+ 3534 04e4 B4349FE5 		ldr	r3, .L53+28
+ 3535 04e8 0120A0E3 		mov	r2, #1
+ 3536 04ec 002083E5 		str	r2, [r3, #0]
+ 3537              	.L31:
+ 150:../timer.c    **** 					}
+ 151:../timer.c    **** 
+ 152:../timer.c    **** 					selected_row = led8_count - 1; // Se resta uno para que el índice de la celda sea correcto (e
+ 3538              		.loc 1 152 0
+ 3539 04f0 A8349FE5 		ldr	r3, .L53+28
+ 3540 04f4 003093E5 		ldr	r3, [r3, #0]
+ 3541 04f8 012043E2 		sub	r2, r3, #1
+ 3542 04fc A8349FE5 		ldr	r3, .L53+40
+ 3543 0500 002083E5 		str	r2, [r3, #0]
+ 153:../timer.c    **** 					led8_count = 12;							 // Indicar que se debe seleccionar la columna con una C en el 8led
+ 3544              		.loc 1 153 0
+ 3545 0504 94349FE5 		ldr	r3, .L53+28
+ 3546 0508 0C20A0E3 		mov	r2, #12
+ 3547 050c 002083E5 		str	r2, [r3, #0]
+ 154:../timer.c    **** 					sudoku_status = COLUMN_SELECTION;
+ 3548              		.loc 1 154 0
+ 3549 0510 80349FE5 		ldr	r3, .L53+20
+ 3550 0514 0320A0E3 		mov	r2, #3
+ 3551 0518 0020C3E5 		strb	r2, [r3, #0]
+ 155:../timer.c    **** 				}
+ 156:../timer.c    **** 				break;
+ 3552              		.loc 1 156 0
+ 3553 051c AF0000EA 		b	.L28
+ 3554              	.L25:
+ 157:../timer.c    **** 			case COLUMN_SELECTION:
+ 158:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+ 3555              		.loc 1 158 0
+ 3556 0520 80349FE5 		ldr	r3, .L53+36
+ 3557 0524 003093E5 		ldr	r3, [r3, #0]
+ 3558 0528 403003E2 		and	r3, r3, #64
+ 3559 052c 000053E3 		cmp	r3, #0
+ 3560 0530 0B00001A 		bne	.L32
+ 159:../timer.c    **** 				{
+ 160:../timer.c    **** 					led8_count++;
+ 3561              		.loc 1 160 0
+ 3562 0534 64349FE5 		ldr	r3, .L53+28
+ 3563 0538 003093E5 		ldr	r3, [r3, #0]
+ 3564 053c 012083E2 		add	r2, r3, #1
+ 3565 0540 58349FE5 		ldr	r3, .L53+28
+ 3566 0544 002083E5 		str	r2, [r3, #0]
+ 161:../timer.c    **** 
+ 162:../timer.c    **** 					if (led8_count > 9)
+ 3567              		.loc 1 162 0
+ 3568 0548 50349FE5 		ldr	r3, .L53+28
+ 3569 054c 003093E5 		ldr	r3, [r3, #0]
+ 3570 0550 090053E3 		cmp	r3, #9
+ 3571 0554 020000DA 		ble	.L32
+ 163:../timer.c    **** 					{
+ 164:../timer.c    **** 						led8_count = 1;
+ 3572              		.loc 1 164 0
+ 3573 0558 40349FE5 		ldr	r3, .L53+28
+ 3574 055c 0120A0E3 		mov	r2, #1
+ 3575 0560 002083E5 		str	r2, [r3, #0]
+ 3576              	.L32:
+ 165:../timer.c    **** 					}
+ 166:../timer.c    **** 				}
+ 167:../timer.c    **** 
+ 168:../timer.c    **** 				if (!(rPDATG & 0x80))
+ 3577              		.loc 1 168 0
+ 3578 0564 3C349FE5 		ldr	r3, .L53+36
+ 3579 0568 003093E5 		ldr	r3, [r3, #0]
+ 3580 056c 803003E2 		and	r3, r3, #128
+ 3581 0570 000053E3 		cmp	r3, #0
+ 3582 0574 9600001A 		bne	.L50
+ 169:../timer.c    **** 				{
+ 170:../timer.c    **** 					if (led8_count > 9)
+ 3583              		.loc 1 170 0
+ 3584 0578 20349FE5 		ldr	r3, .L53+28
+ 3585 057c 003093E5 		ldr	r3, [r3, #0]
+ 3586 0580 090053E3 		cmp	r3, #9
+ 3587 0584 020000DA 		ble	.L34
+ 171:../timer.c    **** 					{
+ 172:../timer.c    **** 						led8_count = 1;
+ 3588              		.loc 1 172 0
+ 3589 0588 10349FE5 		ldr	r3, .L53+28
+ 3590 058c 0120A0E3 		mov	r2, #1
+ 3591 0590 002083E5 		str	r2, [r3, #0]
+ 3592              	.L34:
+ 173:../timer.c    **** 					}
+ 174:../timer.c    **** 
+ 175:../timer.c    **** 					selected_column = led8_count - 1; // Se resta uno para que el índice sea correcto (empezamos 
+ 3593              		.loc 1 175 0
+ 3594 0594 04349FE5 		ldr	r3, .L53+28
+ 3595 0598 003093E5 		ldr	r3, [r3, #0]
+ 3596 059c 012043E2 		sub	r2, r3, #1
+ 3597 05a0 08349FE5 		ldr	r3, .L53+44
+ 3598 05a4 002083E5 		str	r2, [r3, #0]
+ 176:../timer.c    **** 
+ 177:../timer.c    **** 					if (cuadricula[selected_row][selected_column] & 0x8000) // comprobar si la celda es una pista
+ 3599              		.loc 1 177 0
+ 3600 05a8 FC339FE5 		ldr	r3, .L53+40
+ 3601 05ac 001093E5 		ldr	r1, [r3, #0]
+ 3602 05b0 F8339FE5 		ldr	r3, .L53+44
+ 3603 05b4 003093E5 		ldr	r3, [r3, #0]
+ 3604 05b8 DC239FE5 		ldr	r2, .L53+24
+ 3605 05bc 0112A0E1 		mov	r1, r1, asl #4
+ 3606 05c0 033081E0 		add	r3, r1, r3
+ 3607 05c4 8330A0E1 		mov	r3, r3, asl #1
+ 3608 05c8 033082E0 		add	r3, r2, r3
+ 3609 05cc B030D3E1 		ldrh	r3, [r3, #0]
+ 3610 05d0 0338A0E1 		mov	r3, r3, asl #16
+ 3611 05d4 2338A0E1 		mov	r3, r3, lsr #16
+ 3612 05d8 0338A0E1 		mov	r3, r3, asl #16
+ 3613 05dc 4338A0E1 		mov	r3, r3, asr #16
+ 3614 05e0 000053E3 		cmp	r3, #0
+ 3615 05e4 060000AA 		bge	.L35
+ 178:../timer.c    **** 					{
+ 179:../timer.c    **** 						sudoku_status = ROW_SELECTION;
+ 3616              		.loc 1 179 0
+ 3617 05e8 A8339FE5 		ldr	r3, .L53+20
+ 3618 05ec 0220A0E3 		mov	r2, #2
+ 3619 05f0 0020C3E5 		strb	r2, [r3, #0]
+ 180:../timer.c    **** 						led8_count = 15;
+ 3620              		.loc 1 180 0
+ 3621 05f4 A4339FE5 		ldr	r3, .L53+28
+ 3622 05f8 0F20A0E3 		mov	r2, #15
+ 3623 05fc 002083E5 		str	r2, [r3, #0]
+ 181:../timer.c    **** 					}
+ 182:../timer.c    **** 					else
+ 183:../timer.c    **** 					{
+ 184:../timer.c    **** 						sudoku_status = VALUE_SELECTION;
+ 185:../timer.c    **** 						led8_count = 0;
+ 186:../timer.c    **** 					}
+ 187:../timer.c    **** 				}
+ 188:../timer.c    **** 				break;
+ 3624              		.loc 1 188 0
+ 3625 0600 760000EA 		b	.L28
+ 3626              	.L35:
+ 184:../timer.c    **** 						sudoku_status = VALUE_SELECTION;
+ 3627              		.loc 1 184 0
+ 3628 0604 8C339FE5 		ldr	r3, .L53+20
+ 3629 0608 0420A0E3 		mov	r2, #4
+ 3630 060c 0020C3E5 		strb	r2, [r3, #0]
+ 185:../timer.c    **** 						led8_count = 0;
+ 3631              		.loc 1 185 0
+ 3632 0610 88339FE5 		ldr	r3, .L53+28
+ 3633 0614 0020A0E3 		mov	r2, #0
+ 3634 0618 002083E5 		str	r2, [r3, #0]
+ 3635              		.loc 1 188 0
+ 3636 061c 6F0000EA 		b	.L28
+ 3637              	.L26:
+ 189:../timer.c    **** 			case VALUE_SELECTION:
+ 190:../timer.c    **** 				if (!(rPDATG & 0x40)) // Incrementar con el boton izquierdo
+ 3638              		.loc 1 190 0
+ 3639 0620 80339FE5 		ldr	r3, .L53+36
+ 3640 0624 003093E5 		ldr	r3, [r3, #0]
+ 3641 0628 403003E2 		and	r3, r3, #64
+ 3642 062c 000053E3 		cmp	r3, #0
+ 3643 0630 0B00001A 		bne	.L36
+ 191:../timer.c    **** 				{
+ 192:../timer.c    **** 					led8_count++;
+ 3644              		.loc 1 192 0
+ 3645 0634 64339FE5 		ldr	r3, .L53+28
+ 3646 0638 003093E5 		ldr	r3, [r3, #0]
+ 3647 063c 012083E2 		add	r2, r3, #1
+ 3648 0640 58339FE5 		ldr	r3, .L53+28
+ 3649 0644 002083E5 		str	r2, [r3, #0]
+ 193:../timer.c    **** 					if (led8_count > 9)
+ 3650              		.loc 1 193 0
+ 3651 0648 50339FE5 		ldr	r3, .L53+28
+ 3652 064c 003093E5 		ldr	r3, [r3, #0]
+ 3653 0650 090053E3 		cmp	r3, #9
+ 3654 0654 020000DA 		ble	.L36
+ 194:../timer.c    **** 					{
+ 195:../timer.c    **** 						led8_count = 0;
+ 3655              		.loc 1 195 0
+ 3656 0658 40339FE5 		ldr	r3, .L53+28
+ 3657 065c 0020A0E3 		mov	r2, #0
+ 3658 0660 002083E5 		str	r2, [r3, #0]
+ 3659              	.L36:
+ 196:../timer.c    **** 					}
+ 197:../timer.c    **** 				}
  198:../timer.c    **** 
- 199:../timer.c    **** 			if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
- 3368              		.loc 1 199 0
- 3369 0614 A8319FE5 		ldr	r3, .L53+32
- 3370 0618 003093E5 		ldr	r3, [r3, #0]
- 3371 061c 403003E2 		and	r3, r3, #64
- 3372 0620 000053E3 		cmp	r3, #0
- 3373 0624 0400000A 		beq	.L38
- 3374              		.loc 1 199 0 is_stmt 0 discriminator 1
- 3375 0628 94319FE5 		ldr	r3, .L53+32
- 3376 062c 003093E5 		ldr	r3, [r3, #0]
- 3377 0630 803003E2 		and	r3, r3, #128
- 3378 0634 000053E3 		cmp	r3, #0
- 3379 0638 0300001A 		bne	.L39
- 3380              	.L38:
- 200:../timer.c    **** 			{
- 201:../timer.c    **** 				button_state = MANTAINED; // Cambiar a estado mantenido
- 3381              		.loc 1 201 0 is_stmt 1
- 3382 063c 64319FE5 		ldr	r3, .L53+4
- 3383 0640 0320A0E3 		mov	r2, #3
- 3384 0644 0020C3E5 		strb	r2, [r3, #0]
- 3385 0648 020000EA 		b	.L40
- 3386              	.L39:
- 202:../timer.c    **** 			}
- 203:../timer.c    **** 			else
- 204:../timer.c    **** 			{
- 205:../timer.c    **** 				button_state = RELEASED; // Cambiar a estado liberado
- 3387              		.loc 1 205 0
- 3388 064c 54319FE5 		ldr	r3, .L53+4
- 3389 0650 0220A0E3 		mov	r2, #2
- 3390 0654 0020C3E5 		strb	r2, [r3, #0]
- 3391              	.L40:
- 206:../timer.c    **** 			}
- 207:../timer.c    **** 			last_timer_value = timer1_leer(); // Actualizar tiempo
- 3392              		.loc 1 207 0
- 3393 0658 FEFFFFEB 		bl	timer1_leer
- 3394 065c 0020A0E1 		mov	r2, r0
- 3395 0660 48319FE5 		ldr	r3, .L53+12
- 3396 0664 002083E5 		str	r2, [r3, #0]
- 3397              	.LBE2:
- 208:../timer.c    **** 		}
- 209:../timer.c    **** 		break;
- 3398              		.loc 1 209 0
- 3399 0668 440000EA 		b	.L18
- 3400              	.L15:
+ 199:../timer.c    **** 				if (!(rPDATG & 0x80))
+ 3660              		.loc 1 199 0
+ 3661 0664 3C339FE5 		ldr	r3, .L53+36
+ 3662 0668 003093E5 		ldr	r3, [r3, #0]
+ 3663 066c 803003E2 		and	r3, r3, #128
+ 3664 0670 000053E3 		cmp	r3, #0
+ 3665 0674 5800001A 		bne	.L51
+ 200:../timer.c    **** 				{
+ 201:../timer.c    **** 					if (cuadricula[selected_row][selected_column] & 0x8000) // Si es una pista
+ 3666              		.loc 1 201 0
+ 3667 0678 2C339FE5 		ldr	r3, .L53+40
+ 3668 067c 001093E5 		ldr	r1, [r3, #0]
+ 3669 0680 28339FE5 		ldr	r3, .L53+44
+ 3670 0684 003093E5 		ldr	r3, [r3, #0]
+ 3671 0688 0C239FE5 		ldr	r2, .L53+24
+ 3672 068c 0112A0E1 		mov	r1, r1, asl #4
+ 3673 0690 033081E0 		add	r3, r1, r3
+ 3674 0694 8330A0E1 		mov	r3, r3, asl #1
+ 3675 0698 033082E0 		add	r3, r2, r3
+ 3676 069c B030D3E1 		ldrh	r3, [r3, #0]
+ 3677 06a0 0338A0E1 		mov	r3, r3, asl #16
+ 3678 06a4 2338A0E1 		mov	r3, r3, lsr #16
+ 3679 06a8 0338A0E1 		mov	r3, r3, asl #16
+ 3680 06ac 4338A0E1 		mov	r3, r3, asr #16
+ 3681 06b0 000053E3 		cmp	r3, #0
+ 3682 06b4 060000AA 		bge	.L38
+ 202:../timer.c    **** 					{
+ 203:../timer.c    **** 						led8_count = 15; // Indicar que se debe seleccionar la fila con una F en el 8led
+ 3683              		.loc 1 203 0
+ 3684 06b8 E0329FE5 		ldr	r3, .L53+28
+ 3685 06bc 0F20A0E3 		mov	r2, #15
+ 3686 06c0 002083E5 		str	r2, [r3, #0]
+ 204:../timer.c    **** 						sudoku_status = ROW_SELECTION;
+ 3687              		.loc 1 204 0
+ 3688 06c4 CC329FE5 		ldr	r3, .L53+20
+ 3689 06c8 0220A0E3 		mov	r2, #2
+ 3690 06cc 0020C3E5 		strb	r2, [r3, #0]
+ 3691 06d0 380000EA 		b	.L39
+ 3692              	.L38:
+ 205:../timer.c    **** 					}
+ 206:../timer.c    **** 					else
+ 207:../timer.c    **** 					{
+ 208:../timer.c    **** 						celda_poner_valor(&cuadricula[selected_row][selected_column], led8_count);
+ 3693              		.loc 1 208 0
+ 3694 06d4 C0229FE5 		ldr	r2, .L53+24
+ 3695 06d8 CC329FE5 		ldr	r3, .L53+40
+ 3696 06dc 003093E5 		ldr	r3, [r3, #0]
+ 3697 06e0 0312A0E1 		mov	r1, r3, asl #4
+ 3698 06e4 C4329FE5 		ldr	r3, .L53+44
+ 3699 06e8 003093E5 		ldr	r3, [r3, #0]
+ 3700 06ec 033081E0 		add	r3, r1, r3
+ 3701 06f0 8330A0E1 		mov	r3, r3, asl #1
+ 3702 06f4 032082E0 		add	r2, r2, r3
+ 3703 06f8 A0329FE5 		ldr	r3, .L53+28
+ 3704 06fc 003093E5 		ldr	r3, [r3, #0]
+ 3705 0700 FF3003E2 		and	r3, r3, #255
+ 3706 0704 0200A0E1 		mov	r0, r2
+ 3707 0708 0310A0E1 		mov	r1, r3
+ 3708 070c FEFFFFEB 		bl	celda_poner_valor
+ 209:../timer.c    **** 						cuadricula_candidatos_verificar(cuadricula, selected_row, selected_column);
+ 3709              		.loc 1 209 0
+ 3710 0710 94329FE5 		ldr	r3, .L53+40
+ 3711 0714 002093E5 		ldr	r2, [r3, #0]
+ 3712 0718 90329FE5 		ldr	r3, .L53+44
+ 3713 071c 003093E5 		ldr	r3, [r3, #0]
+ 3714 0720 74029FE5 		ldr	r0, .L53+24
+ 3715 0724 0210A0E1 		mov	r1, r2
+ 3716 0728 0320A0E1 		mov	r2, r3
+ 3717 072c FEFFFFEB 		bl	cuadricula_candidatos_verificar
  210:../timer.c    **** 
- 211:../timer.c    **** 	case MANTAINED:
- 212:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > 50000) // 50 ms
- 3401              		.loc 1 212 0
- 3402 066c FEFFFFEB 		bl	timer1_leer
- 3403 0670 0020A0E1 		mov	r2, r0
- 3404 0674 34319FE5 		ldr	r3, .L53+12
- 3405 0678 003093E5 		ldr	r3, [r3, #0]
- 3406 067c 022063E0 		rsb	r2, r3, r2
- 3407 0680 4C319FE5 		ldr	r3, .L53+48
- 3408 0684 030052E1 		cmp	r2, r3
- 3409 0688 3500009A 		bls	.L49
- 213:../timer.c    **** 		{
- 214:../timer.c    **** 			if ((rPDATG & 0x40) && (rPDATG & 0x80)) // Botón liberado
- 3410              		.loc 1 214 0
- 3411 068c 30319FE5 		ldr	r3, .L53+32
- 3412 0690 003093E5 		ldr	r3, [r3, #0]
- 3413 0694 403003E2 		and	r3, r3, #64
- 3414 0698 000053E3 		cmp	r3, #0
- 3415 069c 3200000A 		beq	.L50
- 3416              		.loc 1 214 0 is_stmt 0 discriminator 1
- 3417 06a0 1C319FE5 		ldr	r3, .L53+32
- 3418 06a4 003093E5 		ldr	r3, [r3, #0]
- 3419 06a8 803003E2 		and	r3, r3, #128
- 3420 06ac 000053E3 		cmp	r3, #0
- 3421 06b0 2F00000A 		beq	.L51
- 215:../timer.c    **** 			{
- 216:../timer.c    **** 				last_timer_value = timer1_leer();
- 3422              		.loc 1 216 0 is_stmt 1
- 3423 06b4 FEFFFFEB 		bl	timer1_leer
- 3424 06b8 0020A0E1 		mov	r2, r0
- 3425 06bc EC309FE5 		ldr	r3, .L53+12
- 3426 06c0 002083E5 		str	r2, [r3, #0]
- 217:../timer.c    **** 				button_state = RELEASED;
- 3427              		.loc 1 217 0
- 3428 06c4 DC309FE5 		ldr	r3, .L53+4
- 3429 06c8 0220A0E3 		mov	r2, #2
- 3430 06cc 0020C3E5 		strb	r2, [r3, #0]
- 218:../timer.c    **** 			}
- 219:../timer.c    **** 		}
- 220:../timer.c    **** 		break;
- 3431              		.loc 1 220 0
- 3432 06d0 2A0000EA 		b	.L18
- 3433              	.L14:
- 221:../timer.c    **** 
- 222:../timer.c    **** 	case RELEASED:
- 223:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > 2752512) // TRD
- 3434              		.loc 1 223 0
- 3435 06d4 FEFFFFEB 		bl	timer1_leer
- 3436 06d8 0020A0E1 		mov	r2, r0
- 3437 06dc CC309FE5 		ldr	r3, .L53+12
- 3438 06e0 003093E5 		ldr	r3, [r3, #0]
- 3439 06e4 023063E0 		rsb	r3, r3, r2
- 3440 06e8 2A0853E3 		cmp	r3, #2752512
- 3441 06ec 2200009A 		bls	.L52
- 224:../timer.c    **** 		{
- 225:../timer.c    **** 			push_debug(RELEASED_IRQ, button_id, timer1_leer());
- 3442              		.loc 1 225 0
- 3443 06f0 E0309FE5 		ldr	r3, .L53+52
- 3444 06f4 003093E5 		ldr	r3, [r3, #0]
- 3445 06f8 0340A0E1 		mov	r4, r3
- 3446 06fc FEFFFFEB 		bl	timer1_leer
- 3447 0700 0030A0E1 		mov	r3, r0
- 3448 0704 0200A0E3 		mov	r0, #2
- 3449 0708 0410A0E1 		mov	r1, r4
- 3450 070c 0320A0E1 		mov	r2, r3
- 3451 0710 FEFFFFEB 		bl	push_debug
- 226:../timer.c    **** 			button_state = WAITING;
- 3452              		.loc 1 226 0
- 3453 0714 8C309FE5 		ldr	r3, .L53+4
- 3454 0718 0020A0E3 		mov	r2, #0
- 3455 071c 0020C3E5 		strb	r2, [r3, #0]
- 227:../timer.c    **** 			rEXTINTPND = 0xF;						// Limpiar bits en EXTINTPND
- 3456              		.loc 1 227 0
- 3457 0720 B4309FE5 		ldr	r3, .L53+56
- 3458 0724 0F20A0E3 		mov	r2, #15
- 3459 0728 002083E5 		str	r2, [r3, #0]
- 228:../timer.c    **** 			rINTMSK &= ~(BIT_EINT4567); // Volver a habilitar las interrupciones de botones
- 3460              		.loc 1 228 0
- 3461 072c AC309FE5 		ldr	r3, .L53+60
- 3462 0730 A8209FE5 		ldr	r2, .L53+60
- 3463 0734 002092E5 		ldr	r2, [r2, #0]
- 3464 0738 0226C2E3 		bic	r2, r2, #2097152
- 3465 073c 002083E5 		str	r2, [r3, #0]
- 229:../timer.c    **** 		}
- 230:../timer.c    **** 		break;
- 3466              		.loc 1 230 0
- 3467 0740 0E0000EA 		b	.L18
- 3468              	.L11:
- 231:../timer.c    **** 
- 232:../timer.c    **** 	default:
- 233:../timer.c    **** 		button_state = WAITING; // Reiniciar en caso de error
- 3469              		.loc 1 233 0
- 3470 0744 5C309FE5 		ldr	r3, .L53+4
- 3471 0748 0020A0E3 		mov	r2, #0
- 3472 074c 0020C3E5 		strb	r2, [r3, #0]
- 234:../timer.c    **** 		break;
- 3473              		.loc 1 234 0
- 3474 0750 0A0000EA 		b	.L18
- 3475              	.L43:
-  95:../timer.c    **** 		break;
- 3476              		.loc 1 95 0
- 3477 0754 0000A0E1 		mov	r0, r0	@ nop
- 3478 0758 080000EA 		b	.L18
- 3479              	.L44:
- 209:../timer.c    **** 		break;
- 3480              		.loc 1 209 0
- 3481 075c 0000A0E1 		mov	r0, r0	@ nop
- 3482 0760 060000EA 		b	.L18
- 3483              	.L49:
- 220:../timer.c    **** 		break;
- 3484              		.loc 1 220 0
- 3485 0764 0000A0E1 		mov	r0, r0	@ nop
- 3486 0768 040000EA 		b	.L18
- 3487              	.L50:
- 3488 076c 0000A0E1 		mov	r0, r0	@ nop
- 3489 0770 020000EA 		b	.L18
- 3490              	.L51:
- 3491 0774 0000A0E1 		mov	r0, r0	@ nop
- 3492 0778 000000EA 		b	.L18
- 3493              	.L52:
- 230:../timer.c    **** 		break;
- 3494              		.loc 1 230 0
- 3495 077c 0000A0E1 		mov	r0, r0	@ nop
- 3496              	.L18:
- 235:../timer.c    **** 	}
- 236:../timer.c    **** 
- 237:../timer.c    **** 	rI_ISPC |= BIT_TIMER1; // Limpiar interrupción
- 3497              		.loc 1 237 0
- 3498 0780 5C309FE5 		ldr	r3, .L53+64
- 3499 0784 58209FE5 		ldr	r2, .L53+64
- 3500 0788 002092E5 		ldr	r2, [r2, #0]
- 3501 078c 012A82E3 		orr	r2, r2, #4096
- 3502 0790 002083E5 		str	r2, [r3, #0]
- 238:../timer.c    **** }
- 3503              		.loc 1 238 0
- 3504 0794 24D04BE2 		sub	sp, fp, #36
- 3505 0798 3F689DE8 		ldmfd	sp, {r0, r1, r2, r3, r4, r5, fp, sp, lr}
- 3506 079c 04C09DE4 		ldmfd	sp!, {ip}
- 3507 07a0 04F05EE2 		subs	pc, lr, #4
- 3508              	.L54:
- 3509              		.align	2
- 3510              	.L53:
- 3511 07a4 00000000 		.word	timer1_num_int
- 3512 07a8 00000000 		.word	button_state
- 3513 07ac 00000000 		.word	button_flag
- 3514 07b0 00000000 		.word	last_timer_value
- 3515 07b4 90260400 		.word	272016
- 3516 07b8 00000000 		.word	sudoku_status
- 3517 07bc 00000000 		.word	cuadricula
- 3518 07c0 00000000 		.word	led8_count
- 3519 07c4 4400D201 		.word	30539844
- 3520 07c8 08000000 		.word	selected_row
- 3521 07cc 0C000000 		.word	selected_column
- 3522 07d0 10000000 		.word	modifying_value
- 3523 07d4 50C30000 		.word	50000
- 3524 07d8 00000000 		.word	button_id
- 3525 07dc 5400D201 		.word	30539860
- 3526 07e0 0C00E001 		.word	31457292
- 3527 07e4 2400E001 		.word	31457316
- 3528              		.cfi_endproc
- 3529              	.LFE3:
- 3531              		.align	2
- 3532              		.global	timer1_empezar
- 3534              	timer1_empezar:
- 3535              	.LFB4:
- 239:../timer.c    **** 
- 240:../timer.c    **** void timer1_empezar()
- 241:../timer.c    **** {
- 3536              		.loc 1 241 0
- 3537              		.cfi_startproc
- 3538              		@ Function supports interworking.
- 3539              		@ args = 0, pretend = 0, frame = 0
- 3540              		@ frame_needed = 1, uses_anonymous_args = 0
- 3541 07e8 0DC0A0E1 		mov	ip, sp
- 3542              	.LCFI8:
- 3543              		.cfi_def_cfa_register 12
- 3544 07ec 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 3545 07f0 04B04CE2 		sub	fp, ip, #4
- 3546              		.cfi_offset 14, -8
- 3547              		.cfi_offset 13, -12
- 3548              		.cfi_offset 11, -16
- 3549              	.LCFI9:
- 3550              		.cfi_def_cfa 11, 4
- 242:../timer.c    **** 	// Reiniciar el contador de interrupciones
- 243:../timer.c    **** 	timer1_num_int = 0;
- 3551              		.loc 1 243 0
- 3552 07f4 58309FE5 		ldr	r3, .L56
- 3553 07f8 0020A0E3 		mov	r2, #0
- 3554 07fc 002083E5 		str	r2, [r3, #0]
- 244:../timer.c    **** 
- 245:../timer.c    **** 	// Reiniciar el valor del contador del timer1
- 246:../timer.c    **** 	rTCNTB1 = 64000;
- 3555              		.loc 1 246 0
- 3556 0800 50309FE5 		ldr	r3, .L56+4
- 3557 0804 FA2CA0E3 		mov	r2, #64000
- 3558 0808 002083E5 		str	r2, [r3, #0]
- 247:../timer.c    **** 
- 248:../timer.c    **** 	// Establecer update=manual (bit 9) para reiniciar el contador
- 249:../timer.c    **** 	rTCON |= (0x1 << 9);
- 3559              		.loc 1 249 0
- 3560 080c 48309FE5 		ldr	r3, .L56+8
- 3561 0810 44209FE5 		ldr	r2, .L56+8
- 3562 0814 002092E5 		ldr	r2, [r2, #0]
- 3563 0818 022C82E3 		orr	r2, r2, #512
- 3564 081c 002083E5 		str	r2, [r3, #0]
- 250:../timer.c    **** 
- 251:../timer.c    **** 	// Iniciar el timer1 (bit 8)
- 252:../timer.c    **** 	rTCON |= (0x1 << 8);
- 3565              		.loc 1 252 0
- 3566 0820 34309FE5 		ldr	r3, .L56+8
- 3567 0824 30209FE5 		ldr	r2, .L56+8
- 3568 0828 002092E5 		ldr	r2, [r2, #0]
- 3569 082c 012C82E3 		orr	r2, r2, #256
- 3570 0830 002083E5 		str	r2, [r3, #0]
- 253:../timer.c    **** 
- 254:../timer.c    **** 	// Desactivar el bit de update manual para permitir el funcionamiento normal
- 255:../timer.c    **** 	rTCON &= ~0x100;
- 3571              		.loc 1 255 0
- 3572 0834 20309FE5 		ldr	r3, .L56+8
- 3573 0838 1C209FE5 		ldr	r2, .L56+8
- 3574 083c 002092E5 		ldr	r2, [r2, #0]
- 3575 0840 012CC2E3 		bic	r2, r2, #256
- 3576 0844 002083E5 		str	r2, [r3, #0]
- 256:../timer.c    **** }
- 3577              		.loc 1 256 0
- 3578 0848 0CD04BE2 		sub	sp, fp, #12
- 3579 084c 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 3580 0850 1EFF2FE1 		bx	lr
- 3581              	.L57:
- 3582              		.align	2
- 3583              	.L56:
- 3584 0854 00000000 		.word	timer1_num_int
- 3585 0858 1800D501 		.word	30736408
- 3586 085c 0800D501 		.word	30736392
- 3587              		.cfi_endproc
- 3588              	.LFE4:
- 3590              		.align	2
- 3591              		.global	timer1_leer
- 3593              	timer1_leer:
- 3594              	.LFB5:
- 257:../timer.c    **** 
- 258:../timer.c    **** unsigned int timer1_leer()
- 259:../timer.c    **** {
- 3595              		.loc 1 259 0
- 3596              		.cfi_startproc
- 3597              		@ Function supports interworking.
- 3598              		@ args = 0, pretend = 0, frame = 8
- 3599              		@ frame_needed = 1, uses_anonymous_args = 0
- 3600 0860 0DC0A0E1 		mov	ip, sp
- 3601              	.LCFI10:
- 3602              		.cfi_def_cfa_register 12
- 3603 0864 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 3604 0868 04B04CE2 		sub	fp, ip, #4
- 3605              		.cfi_offset 14, -8
- 3606              		.cfi_offset 13, -12
- 3607              		.cfi_offset 11, -16
- 3608              	.LCFI11:
- 3609              		.cfi_def_cfa 11, 4
- 3610 086c 08D04DE2 		sub	sp, sp, #8
- 260:../timer.c    **** 
- 261:../timer.c    **** 	unsigned int valor_cuenta = rTCNTO1; // Leer el valor actual del contador
- 3611              		.loc 1 261 0
- 3612 0870 3C309FE5 		ldr	r3, .L59
- 3613 0874 003093E5 		ldr	r3, [r3, #0]
- 3614 0878 10300BE5 		str	r3, [fp, #-16]
- 262:../timer.c    **** 	// Calcular el tiempo transcurrido en el timer1
- 263:../timer.c    **** 	// timer1_num_int * 64000 es el total de ticks de los ciclos completos
- 264:../timer.c    **** 	// (2.0 / 33.0) es el factor de conversion de ticks a microsegundos
- 265:../timer.c    **** 	unsigned int tiempo_transcurrido = (timer1_num_int * 65536) + (65535 - valor_cuenta);
- 3615              		.loc 1 265 0
- 3616 087c 34309FE5 		ldr	r3, .L59+4
- 3617 0880 003093E5 		ldr	r3, [r3, #0]
- 3618 0884 0338A0E1 		mov	r3, r3, asl #16
- 3619 0888 0320A0E1 		mov	r2, r3
- 3620 088c 10301BE5 		ldr	r3, [fp, #-16]
- 3621 0890 023063E0 		rsb	r3, r3, r2
- 3622 0894 FF3C83E2 		add	r3, r3, #65280
- 3623 0898 FF3083E2 		add	r3, r3, #255
- 3624 089c 14300BE5 		str	r3, [fp, #-20]
- 266:../timer.c    **** 
- 267:../timer.c    **** 	return tiempo_transcurrido;
- 3625              		.loc 1 267 0
- 3626 08a0 14301BE5 		ldr	r3, [fp, #-20]
- 268:../timer.c    **** }
- 3627              		.loc 1 268 0
- 3628 08a4 0300A0E1 		mov	r0, r3
- 3629 08a8 0CD04BE2 		sub	sp, fp, #12
- 3630 08ac 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 3631 08b0 1EFF2FE1 		bx	lr
- 3632              	.L60:
- 3633              		.align	2
- 3634              	.L59:
- 3635 08b4 2000D501 		.word	30736416
- 3636 08b8 00000000 		.word	timer1_num_int
- 3637              		.cfi_endproc
- 3638              	.LFE5:
- 3640              		.align	2
- 3641              		.global	timer1_parar
- 3643              	timer1_parar:
- 3644              	.LFB6:
+ 211:../timer.c    **** 						if (cuadricula[selected_row][selected_column] & 0x4000) // Comprobar si hay errores
+ 3718              		.loc 1 211 0
+ 3719 0730 74329FE5 		ldr	r3, .L53+40
+ 3720 0734 001093E5 		ldr	r1, [r3, #0]
+ 3721 0738 70329FE5 		ldr	r3, .L53+44
+ 3722 073c 003093E5 		ldr	r3, [r3, #0]
+ 3723 0740 54229FE5 		ldr	r2, .L53+24
+ 3724 0744 0112A0E1 		mov	r1, r1, asl #4
+ 3725 0748 033081E0 		add	r3, r1, r3
+ 3726 074c 8330A0E1 		mov	r3, r3, asl #1
+ 3727 0750 033082E0 		add	r3, r2, r3
+ 3728 0754 B030D3E1 		ldrh	r3, [r3, #0]
+ 3729 0758 013903E2 		and	r3, r3, #16384
+ 3730 075c 000053E3 		cmp	r3, #0
+ 3731 0760 0300000A 		beq	.L40
+ 212:../timer.c    **** 						{
+ 213:../timer.c    **** 							led8_count = 14; // Indicar error con una E en el 8led
+ 3732              		.loc 1 213 0
+ 3733 0764 34329FE5 		ldr	r3, .L53+28
+ 3734 0768 0E20A0E3 		mov	r2, #14
+ 3735 076c 002083E5 		str	r2, [r3, #0]
+ 3736 0770 100000EA 		b	.L39
+ 3737              	.L40:
+ 214:../timer.c    **** 						}
+ 215:../timer.c    **** 						else // Si no hay errores, propagar el valor de la celda
+ 216:../timer.c    **** 						{
+ 217:../timer.c    **** 							sudoku_candidatos_propagar_arm(cuadricula, selected_row, selected_column, led8_count);
+ 3738              		.loc 1 217 0
+ 3739 0774 30329FE5 		ldr	r3, .L53+40
+ 3740 0778 003093E5 		ldr	r3, [r3, #0]
+ 3741 077c FF1003E2 		and	r1, r3, #255
+ 3742 0780 28329FE5 		ldr	r3, .L53+44
+ 3743 0784 003093E5 		ldr	r3, [r3, #0]
+ 3744 0788 FF2003E2 		and	r2, r3, #255
+ 3745 078c 0C329FE5 		ldr	r3, .L53+28
+ 3746 0790 003093E5 		ldr	r3, [r3, #0]
+ 3747 0794 FF3003E2 		and	r3, r3, #255
+ 3748 0798 FC019FE5 		ldr	r0, .L53+24
+ 3749 079c FEFFFFEB 		bl	sudoku_candidatos_propagar_arm
+ 218:../timer.c    **** 							led8_count = 15;
+ 3750              		.loc 1 218 0
+ 3751 07a0 F8319FE5 		ldr	r3, .L53+28
+ 3752 07a4 0F20A0E3 		mov	r2, #15
+ 3753 07a8 002083E5 		str	r2, [r3, #0]
+ 219:../timer.c    **** 							sudoku_status = ROW_SELECTION;
+ 3754              		.loc 1 219 0
+ 3755 07ac E4319FE5 		ldr	r3, .L53+20
+ 3756 07b0 0220A0E3 		mov	r2, #2
+ 3757 07b4 0020C3E5 		strb	r2, [r3, #0]
+ 3758              	.L39:
+ 220:../timer.c    **** 						}
+ 221:../timer.c    **** 					}
+ 222:../timer.c    **** 					LCD_mostrar_sudoku(cuadricula);
+ 3759              		.loc 1 222 0
+ 3760 07b8 DC019FE5 		ldr	r0, .L53+24
+ 3761 07bc FEFFFFEB 		bl	LCD_mostrar_sudoku
+ 223:../timer.c    **** 				}
+ 224:../timer.c    **** 				break;
+ 3762              		.loc 1 224 0
+ 3763 07c0 060000EA 		b	.L28
+ 3764              	.L48:
+ 225:../timer.c    **** 			default:
+ 226:../timer.c    **** 				break;
+ 3765              		.loc 1 226 0
+ 3766 07c4 0000A0E1 		mov	r0, r0	@ nop
+ 3767 07c8 040000EA 		b	.L28
+ 3768              	.L49:
+ 156:../timer.c    **** 				break;
+ 3769              		.loc 1 156 0
+ 3770 07cc 0000A0E1 		mov	r0, r0	@ nop
+ 3771 07d0 020000EA 		b	.L28
+ 3772              	.L50:
+ 188:../timer.c    **** 				break;
+ 3773              		.loc 1 188 0
+ 3774 07d4 0000A0E1 		mov	r0, r0	@ nop
+ 3775 07d8 000000EA 		b	.L28
+ 3776              	.L51:
+ 224:../timer.c    **** 				break;
+ 3777              		.loc 1 224 0
+ 3778 07dc 0000A0E1 		mov	r0, r0	@ nop
+ 3779              	.L28:
+ 227:../timer.c    **** 			}
+ 228:../timer.c    **** 
+ 229:../timer.c    **** 			D8Led_symbol(led8_count & 0xf);
+ 3780              		.loc 1 229 0
+ 3781 07e0 B8319FE5 		ldr	r3, .L53+28
+ 3782 07e4 003093E5 		ldr	r3, [r3, #0]
+ 3783 07e8 0F3003E2 		and	r3, r3, #15
+ 3784 07ec 0300A0E1 		mov	r0, r3
+ 3785 07f0 FEFFFFEB 		bl	D8Led_symbol
+ 230:../timer.c    **** 
+ 231:../timer.c    **** 			if (!(rPDATG & 0x40) || !(rPDATG & 0x80))
+ 3786              		.loc 1 231 0
+ 3787 07f4 AC319FE5 		ldr	r3, .L53+36
+ 3788 07f8 003093E5 		ldr	r3, [r3, #0]
+ 3789 07fc 403003E2 		and	r3, r3, #64
+ 3790 0800 000053E3 		cmp	r3, #0
+ 3791 0804 0400000A 		beq	.L41
+ 3792              		.loc 1 231 0 is_stmt 0 discriminator 1
+ 3793 0808 98319FE5 		ldr	r3, .L53+36
+ 3794 080c 003093E5 		ldr	r3, [r3, #0]
+ 3795 0810 803003E2 		and	r3, r3, #128
+ 3796 0814 000053E3 		cmp	r3, #0
+ 3797 0818 0300001A 		bne	.L42
+ 3798              	.L41:
+ 232:../timer.c    **** 			{
+ 233:../timer.c    **** 				button_state = MAINTAINED; // Cambiar a estado mantenido
+ 3799              		.loc 1 233 0 is_stmt 1
+ 3800 081c 64319FE5 		ldr	r3, .L53+4
+ 3801 0820 0320A0E3 		mov	r2, #3
+ 3802 0824 0020C3E5 		strb	r2, [r3, #0]
+ 3803 0828 020000EA 		b	.L43
+ 3804              	.L42:
+ 234:../timer.c    **** 			}
+ 235:../timer.c    **** 			else
+ 236:../timer.c    **** 			{
+ 237:../timer.c    **** 				button_state = RELEASED; // Cambiar a estado liberado
+ 3805              		.loc 1 237 0
+ 3806 082c 54319FE5 		ldr	r3, .L53+4
+ 3807 0830 0220A0E3 		mov	r2, #2
+ 3808 0834 0020C3E5 		strb	r2, [r3, #0]
+ 3809              	.L43:
+ 238:../timer.c    **** 			}
+ 239:../timer.c    **** 			last_timer_value = timer1_leer(); // Actualizar tiempo
+ 3810              		.loc 1 239 0
+ 3811 0838 FEFFFFEB 		bl	timer1_leer
+ 3812 083c 0020A0E1 		mov	r2, r0
+ 3813 0840 48319FE5 		ldr	r3, .L53+12
+ 3814 0844 002083E5 		str	r2, [r3, #0]
+ 3815              	.LBE3:
+ 240:../timer.c    **** 		}
+ 241:../timer.c    **** 		break;
+ 3816              		.loc 1 241 0
+ 3817 0848 440000EA 		b	.L19
+ 3818              	.L16:
+ 242:../timer.c    **** 
+ 243:../timer.c    **** 	case MAINTAINED:
+ 244:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > 50000) // 50 ms
+ 3819              		.loc 1 244 0
+ 3820 084c FEFFFFEB 		bl	timer1_leer
+ 3821 0850 0020A0E1 		mov	r2, r0
+ 3822 0854 34319FE5 		ldr	r3, .L53+12
+ 3823 0858 003093E5 		ldr	r3, [r3, #0]
+ 3824 085c 022063E0 		rsb	r2, r3, r2
+ 3825 0860 4C319FE5 		ldr	r3, .L53+48
+ 3826 0864 030052E1 		cmp	r2, r3
+ 3827 0868 1000009A 		bls	.L44
+ 245:../timer.c    **** 		{
+ 246:../timer.c    **** 			if ((rPDATG & 0x40) && (rPDATG & 0x80)) // Botón liberado
+ 3828              		.loc 1 246 0
+ 3829 086c 34319FE5 		ldr	r3, .L53+36
+ 3830 0870 003093E5 		ldr	r3, [r3, #0]
+ 3831 0874 403003E2 		and	r3, r3, #64
+ 3832 0878 000053E3 		cmp	r3, #0
+ 3833 087c 0B00000A 		beq	.L44
+ 3834              		.loc 1 246 0 is_stmt 0 discriminator 1
+ 3835 0880 20319FE5 		ldr	r3, .L53+36
+ 3836 0884 003093E5 		ldr	r3, [r3, #0]
+ 3837 0888 803003E2 		and	r3, r3, #128
+ 3838 088c 000053E3 		cmp	r3, #0
+ 3839 0890 0600000A 		beq	.L44
+ 247:../timer.c    **** 			{
+ 248:../timer.c    **** 				last_timer_value = timer1_leer();
+ 3840              		.loc 1 248 0 is_stmt 1
+ 3841 0894 FEFFFFEB 		bl	timer1_leer
+ 3842 0898 0020A0E1 		mov	r2, r0
+ 3843 089c EC309FE5 		ldr	r3, .L53+12
+ 3844 08a0 002083E5 		str	r2, [r3, #0]
+ 249:../timer.c    **** 				button_state = RELEASED;
+ 3845              		.loc 1 249 0
+ 3846 08a4 DC309FE5 		ldr	r3, .L53+4
+ 3847 08a8 0220A0E3 		mov	r2, #2
+ 3848 08ac 0020C3E5 		strb	r2, [r3, #0]
+ 3849              	.L44:
+ 250:../timer.c    **** 			}
+ 251:../timer.c    **** 		}
+ 252:../timer.c    **** 		last_timer_value = timer1_leer();
+ 3850              		.loc 1 252 0
+ 3851 08b0 FEFFFFEB 		bl	timer1_leer
+ 3852 08b4 0020A0E1 		mov	r2, r0
+ 3853 08b8 D0309FE5 		ldr	r3, .L53+12
+ 3854 08bc 002083E5 		str	r2, [r3, #0]
+ 253:../timer.c    **** 		break;
+ 3855              		.loc 1 253 0
+ 3856 08c0 260000EA 		b	.L19
+ 3857              	.L15:
+ 254:../timer.c    **** 
+ 255:../timer.c    **** 	case RELEASED:
+ 256:../timer.c    **** 		if ((timer1_leer() - last_timer_value) > TRD)
+ 3858              		.loc 1 256 0
+ 3859 08c4 FEFFFFEB 		bl	timer1_leer
+ 3860 08c8 0020A0E1 		mov	r2, r0
+ 3861 08cc BC309FE5 		ldr	r3, .L53+12
+ 3862 08d0 003093E5 		ldr	r3, [r3, #0]
+ 3863 08d4 022063E0 		rsb	r2, r3, r2
+ 3864 08d8 D8309FE5 		ldr	r3, .L53+52
+ 3865 08dc 003093E5 		ldr	r3, [r3, #0]
+ 3866 08e0 030052E1 		cmp	r2, r3
+ 3867 08e4 1C00009A 		bls	.L52
+ 257:../timer.c    **** 		{
+ 258:../timer.c    **** 			push_debug(RELEASED_IRQ, button_id, timer1_leer());
+ 3868              		.loc 1 258 0
+ 3869 08e8 CC309FE5 		ldr	r3, .L53+56
+ 3870 08ec 003093E5 		ldr	r3, [r3, #0]
+ 3871 08f0 0340A0E1 		mov	r4, r3
+ 3872 08f4 FEFFFFEB 		bl	timer1_leer
+ 3873 08f8 0030A0E1 		mov	r3, r0
+ 3874 08fc 0200A0E3 		mov	r0, #2
+ 3875 0900 0410A0E1 		mov	r1, r4
+ 3876 0904 0320A0E1 		mov	r2, r3
+ 3877 0908 FEFFFFEB 		bl	push_debug
+ 259:../timer.c    **** 			button_state = WAITING;
+ 3878              		.loc 1 259 0
+ 3879 090c 74309FE5 		ldr	r3, .L53+4
+ 3880 0910 0020A0E3 		mov	r2, #0
+ 3881 0914 0020C3E5 		strb	r2, [r3, #0]
+ 260:../timer.c    **** 			rEXTINTPND = 0xF;						// Limpiar bits en EXTINTPND
+ 3882              		.loc 1 260 0
+ 3883 0918 A0309FE5 		ldr	r3, .L53+60
+ 3884 091c 0F20A0E3 		mov	r2, #15
+ 3885 0920 002083E5 		str	r2, [r3, #0]
+ 261:../timer.c    **** 			rINTMSK &= ~(BIT_EINT4567); // Volver a habilitar las interrupciones de botones
+ 3886              		.loc 1 261 0
+ 3887 0924 98309FE5 		ldr	r3, .L53+64
+ 3888 0928 94209FE5 		ldr	r2, .L53+64
+ 3889 092c 002092E5 		ldr	r2, [r2, #0]
+ 3890 0930 0226C2E3 		bic	r2, r2, #2097152
+ 3891 0934 002083E5 		str	r2, [r3, #0]
+ 262:../timer.c    **** 		}
+ 263:../timer.c    **** 		break;
+ 3892              		.loc 1 263 0
+ 3893 0938 080000EA 		b	.L19
+ 3894              	.L12:
+ 264:../timer.c    **** 
+ 265:../timer.c    **** 	default:
+ 266:../timer.c    **** 		button_state = WAITING; // Reiniciar en caso de error
+ 3895              		.loc 1 266 0
+ 3896 093c 44309FE5 		ldr	r3, .L53+4
+ 3897 0940 0020A0E3 		mov	r2, #0
+ 3898 0944 0020C3E5 		strb	r2, [r3, #0]
+ 267:../timer.c    **** 		break;
+ 3899              		.loc 1 267 0
+ 3900 0948 040000EA 		b	.L19
+ 3901              	.L46:
+ 116:../timer.c    **** 		break;
+ 3902              		.loc 1 116 0
+ 3903 094c 0000A0E1 		mov	r0, r0	@ nop
+ 3904 0950 020000EA 		b	.L19
+ 3905              	.L47:
+ 241:../timer.c    **** 		break;
+ 3906              		.loc 1 241 0
+ 3907 0954 0000A0E1 		mov	r0, r0	@ nop
+ 3908 0958 000000EA 		b	.L19
+ 3909              	.L52:
+ 263:../timer.c    **** 		break;
+ 3910              		.loc 1 263 0
+ 3911 095c 0000A0E1 		mov	r0, r0	@ nop
+ 3912              	.L19:
+ 268:../timer.c    **** 	}
  269:../timer.c    **** 
- 270:../timer.c    **** unsigned int timer1_parar()
- 271:../timer.c    **** {
- 3645              		.loc 1 271 0
- 3646              		.cfi_startproc
- 3647              		@ Function supports interworking.
- 3648              		@ args = 0, pretend = 0, frame = 0
- 3649              		@ frame_needed = 1, uses_anonymous_args = 0
- 3650 08bc 0DC0A0E1 		mov	ip, sp
- 3651              	.LCFI12:
- 3652              		.cfi_def_cfa_register 12
- 3653 08c0 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 3654 08c4 04B04CE2 		sub	fp, ip, #4
- 3655              		.cfi_offset 14, -8
- 3656              		.cfi_offset 13, -12
- 3657              		.cfi_offset 11, -16
- 3658              	.LCFI13:
- 3659              		.cfi_def_cfa 11, 4
- 272:../timer.c    **** 	rTCON &= ~(0x1 << 8); // Desactivar el timer 1 (bit 9 y 11)
- 3660              		.loc 1 272 0
- 3661 08c8 24309FE5 		ldr	r3, .L62
- 3662 08cc 20209FE5 		ldr	r2, .L62
- 3663 08d0 002092E5 		ldr	r2, [r2, #0]
- 3664 08d4 012CC2E3 		bic	r2, r2, #256
- 3665 08d8 002083E5 		str	r2, [r3, #0]
- 273:../timer.c    **** 
- 274:../timer.c    **** 	return timer1_leer();
- 3666              		.loc 1 274 0
- 3667 08dc FEFFFFEB 		bl	timer1_leer
- 3668 08e0 0030A0E1 		mov	r3, r0
- 275:../timer.c    **** }
- 3669              		.loc 1 275 0
- 3670 08e4 0300A0E1 		mov	r0, r3
- 3671 08e8 0CD04BE2 		sub	sp, fp, #12
- 3672 08ec 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 3673 08f0 1EFF2FE1 		bx	lr
- 3674              	.L63:
- 3675              		.align	2
- 3676              	.L62:
- 3677 08f4 0800D501 		.word	30736392
- 3678              		.cfi_endproc
- 3679              	.LFE6:
- 3681              		.align	2
- 3682              		.global	timer2_ISR
- 3684              	timer2_ISR:
- 3685              	.LFB7:
- 276:../timer.c    **** 
- 277:../timer.c    **** void timer2_ISR(void)
- 278:../timer.c    **** {
- 3686              		.loc 1 278 0
- 3687              		.cfi_startproc
- 3688              		@ Interrupt Service Routine.
- 3689              		@ args = 0, pretend = 0, frame = 0
- 3690              		@ frame_needed = 1, uses_anonymous_args = 0
- 3691 08f8 04C02DE5 		str	ip, [sp, #-4]!
- 3692 08fc 0DC0A0E1 		mov	ip, sp
- 3693              	.LCFI14:
- 3694              		.cfi_def_cfa_register 12
- 3695 0900 0FD82DE9 		stmfd	sp!, {r0, r1, r2, r3, fp, ip, lr, pc}
- 3696 0904 04B04CE2 		sub	fp, ip, #4
- 3697              		.cfi_offset 14, -8
- 3698              		.cfi_offset 13, -12
- 3699              		.cfi_offset 11, -16
- 3700              		.cfi_offset 3, -20
- 3701              		.cfi_offset 2, -24
- 3702              		.cfi_offset 1, -28
- 3703              		.cfi_offset 0, -32
- 3704              	.LCFI15:
- 3705              		.cfi_def_cfa 11, 4
- 279:../timer.c    **** 	led_event_counter++;
- 3706              		.loc 1 279 0
- 3707 0908 70309FE5 		ldr	r3, .L68
- 3708 090c 003093E5 		ldr	r3, [r3, #0]
- 3709 0910 012083E2 		add	r2, r3, #1
- 3710 0914 64309FE5 		ldr	r3, .L68
- 3711 0918 002083E5 		str	r2, [r3, #0]
+ 270:../timer.c    **** 	rI_ISPC |= BIT_TIMER1; // Limpiar interrupción
+ 3913              		.loc 1 270 0
+ 3914 0960 60309FE5 		ldr	r3, .L53+68
+ 3915 0964 5C209FE5 		ldr	r2, .L53+68
+ 3916 0968 002092E5 		ldr	r2, [r2, #0]
+ 3917 096c 012A82E3 		orr	r2, r2, #4096
+ 3918 0970 002083E5 		str	r2, [r3, #0]
+ 271:../timer.c    **** }
+ 3919              		.loc 1 271 0
+ 3920 0974 24D04BE2 		sub	sp, fp, #36
+ 3921 0978 3F689DE8 		ldmfd	sp, {r0, r1, r2, r3, r4, r5, fp, sp, lr}
+ 3922 097c 04C09DE4 		ldmfd	sp!, {ip}
+ 3923 0980 04F05EE2 		subs	pc, lr, #4
+ 3924              	.L54:
+ 3925              		.align	2
+ 3926              	.L53:
+ 3927 0984 00000000 		.word	timer1_num_int
+ 3928 0988 00000000 		.word	button_state
+ 3929 098c 00000000 		.word	button_flag
+ 3930 0990 00000000 		.word	last_timer_value
+ 3931 0994 00000000 		.word	TRP
+ 3932 0998 00000000 		.word	sudoku_status
+ 3933 099c 00000000 		.word	cuadricula
+ 3934 09a0 00000000 		.word	led8_count
+ 3935 09a4 00000000 		.word	game_started
+ 3936 09a8 4400D201 		.word	30539844
+ 3937 09ac 14000000 		.word	selected_row
+ 3938 09b0 18000000 		.word	selected_column
+ 3939 09b4 50C30000 		.word	50000
+ 3940 09b8 04000000 		.word	TRD
+ 3941 09bc 00000000 		.word	button_id
+ 3942 09c0 5400D201 		.word	30539860
+ 3943 09c4 0C00E001 		.word	31457292
+ 3944 09c8 2400E001 		.word	31457316
+ 3945              		.cfi_endproc
+ 3946              	.LFE3:
+ 3948              		.align	2
+ 3949              		.global	timer1_empezar
+ 3951              	timer1_empezar:
+ 3952              	.LFB4:
+ 272:../timer.c    **** 
+ 273:../timer.c    **** void timer1_empezar()
+ 274:../timer.c    **** {
+ 3953              		.loc 1 274 0
+ 3954              		.cfi_startproc
+ 3955              		@ Function supports interworking.
+ 3956              		@ args = 0, pretend = 0, frame = 0
+ 3957              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3958 09cc 0DC0A0E1 		mov	ip, sp
+ 3959              	.LCFI8:
+ 3960              		.cfi_def_cfa_register 12
+ 3961 09d0 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 3962 09d4 04B04CE2 		sub	fp, ip, #4
+ 3963              		.cfi_offset 14, -8
+ 3964              		.cfi_offset 13, -12
+ 3965              		.cfi_offset 11, -16
+ 3966              	.LCFI9:
+ 3967              		.cfi_def_cfa 11, 4
+ 275:../timer.c    **** 	// Reiniciar el contador de interrupciones
+ 276:../timer.c    **** 	timer1_num_int = 0;
+ 3968              		.loc 1 276 0
+ 3969 09d8 58309FE5 		ldr	r3, .L56
+ 3970 09dc 0020A0E3 		mov	r2, #0
+ 3971 09e0 002083E5 		str	r2, [r3, #0]
+ 277:../timer.c    **** 
+ 278:../timer.c    **** 	// Reiniciar el valor del contador del timer1
+ 279:../timer.c    **** 	rTCNTB1 = 64000;
+ 3972              		.loc 1 279 0
+ 3973 09e4 50309FE5 		ldr	r3, .L56+4
+ 3974 09e8 FA2CA0E3 		mov	r2, #64000
+ 3975 09ec 002083E5 		str	r2, [r3, #0]
  280:../timer.c    **** 
- 281:../timer.c    **** 	if (led_event_counter < 200)
- 3712              		.loc 1 281 0
- 3713 091c 5C309FE5 		ldr	r3, .L68
- 3714 0920 003093E5 		ldr	r3, [r3, #0]
- 3715 0924 C70053E3 		cmp	r3, #199
- 3716 0928 010000CA 		bgt	.L65
- 3717              	.LBB3:
- 282:../timer.c    **** 	{
- 283:../timer.c    **** 		led2_on();
- 3718              		.loc 1 283 0
- 3719 092c FEFFFFEB 		bl	led2_on
- 3720 0930 090000EA 		b	.L66
- 3721              	.L65:
- 3722              	.LBE3:
- 284:../timer.c    **** 	}
- 285:../timer.c    **** 	else if (led_event_counter < 400)
- 3723              		.loc 1 285 0
- 3724 0934 44309FE5 		ldr	r3, .L68
- 3725 0938 002093E5 		ldr	r2, [r3, #0]
- 3726 093c 40309FE5 		ldr	r3, .L68+4
- 3727 0940 030052E1 		cmp	r2, r3
- 3728 0944 010000CA 		bgt	.L67
- 3729              	.LBB4:
- 286:../timer.c    **** 	{
- 287:../timer.c    **** 		led2_off();
- 3730              		.loc 1 287 0
- 3731 0948 FEFFFFEB 		bl	led2_off
- 3732 094c 020000EA 		b	.L66
- 3733              	.L67:
- 3734              	.LBE4:
- 288:../timer.c    **** 	}
- 289:../timer.c    **** 	else
- 290:../timer.c    **** 	{
- 291:../timer.c    **** 		led_event_counter = 0; // Reiniciar el contador después de 160 eventos (2 segundos)
- 3735              		.loc 1 291 0
- 3736 0950 28309FE5 		ldr	r3, .L68
- 3737 0954 0020A0E3 		mov	r2, #0
- 3738 0958 002083E5 		str	r2, [r3, #0]
- 3739              	.L66:
- 292:../timer.c    **** 	}
+ 281:../timer.c    **** 	// Establecer update=manual (bit 9) para reiniciar el contador
+ 282:../timer.c    **** 	rTCON |= (0x1 << 9);
+ 3976              		.loc 1 282 0
+ 3977 09f0 48309FE5 		ldr	r3, .L56+8
+ 3978 09f4 44209FE5 		ldr	r2, .L56+8
+ 3979 09f8 002092E5 		ldr	r2, [r2, #0]
+ 3980 09fc 022C82E3 		orr	r2, r2, #512
+ 3981 0a00 002083E5 		str	r2, [r3, #0]
+ 283:../timer.c    **** 
+ 284:../timer.c    **** 	// Iniciar el timer1 (bit 8)
+ 285:../timer.c    **** 	rTCON |= (0x1 << 8);
+ 3982              		.loc 1 285 0
+ 3983 0a04 34309FE5 		ldr	r3, .L56+8
+ 3984 0a08 30209FE5 		ldr	r2, .L56+8
+ 3985 0a0c 002092E5 		ldr	r2, [r2, #0]
+ 3986 0a10 012C82E3 		orr	r2, r2, #256
+ 3987 0a14 002083E5 		str	r2, [r3, #0]
+ 286:../timer.c    **** 
+ 287:../timer.c    **** 	// Desactivar el bit de update manual para permitir el funcionamiento normal
+ 288:../timer.c    **** 	rTCON &= ~0x100;
+ 3988              		.loc 1 288 0
+ 3989 0a18 20309FE5 		ldr	r3, .L56+8
+ 3990 0a1c 1C209FE5 		ldr	r2, .L56+8
+ 3991 0a20 002092E5 		ldr	r2, [r2, #0]
+ 3992 0a24 012CC2E3 		bic	r2, r2, #256
+ 3993 0a28 002083E5 		str	r2, [r3, #0]
+ 289:../timer.c    **** }
+ 3994              		.loc 1 289 0
+ 3995 0a2c 0CD04BE2 		sub	sp, fp, #12
+ 3996 0a30 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 3997 0a34 1EFF2FE1 		bx	lr
+ 3998              	.L57:
+ 3999              		.align	2
+ 4000              	.L56:
+ 4001 0a38 00000000 		.word	timer1_num_int
+ 4002 0a3c 1800D501 		.word	30736408
+ 4003 0a40 0800D501 		.word	30736392
+ 4004              		.cfi_endproc
+ 4005              	.LFE4:
+ 4007              		.align	2
+ 4008              		.global	timer1_leer
+ 4010              	timer1_leer:
+ 4011              	.LFB5:
+ 290:../timer.c    **** 
+ 291:../timer.c    **** unsigned int timer1_leer()
+ 292:../timer.c    **** {
+ 4012              		.loc 1 292 0
+ 4013              		.cfi_startproc
+ 4014              		@ Function supports interworking.
+ 4015              		@ args = 0, pretend = 0, frame = 8
+ 4016              		@ frame_needed = 1, uses_anonymous_args = 0
+ 4017 0a44 0DC0A0E1 		mov	ip, sp
+ 4018              	.LCFI10:
+ 4019              		.cfi_def_cfa_register 12
+ 4020 0a48 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 4021 0a4c 04B04CE2 		sub	fp, ip, #4
+ 4022              		.cfi_offset 14, -8
+ 4023              		.cfi_offset 13, -12
+ 4024              		.cfi_offset 11, -16
+ 4025              	.LCFI11:
+ 4026              		.cfi_def_cfa 11, 4
+ 4027 0a50 08D04DE2 		sub	sp, sp, #8
  293:../timer.c    **** 
- 294:../timer.c    **** 	rI_ISPC |= BIT_TIMER2; // Limpiar la interrupción
- 3740              		.loc 1 294 0
- 3741 095c 24309FE5 		ldr	r3, .L68+8
- 3742 0960 20209FE5 		ldr	r2, .L68+8
- 3743 0964 002092E5 		ldr	r2, [r2, #0]
- 3744 0968 022B82E3 		orr	r2, r2, #2048
- 3745 096c 002083E5 		str	r2, [r3, #0]
- 295:../timer.c    **** }
- 3746              		.loc 1 295 0
- 3747 0970 1CD04BE2 		sub	sp, fp, #28
- 3748 0974 0F689DE8 		ldmfd	sp, {r0, r1, r2, r3, fp, sp, lr}
- 3749 0978 04C09DE4 		ldmfd	sp!, {ip}
- 3750 097c 04F05EE2 		subs	pc, lr, #4
- 3751              	.L69:
- 3752              		.align	2
- 3753              	.L68:
- 3754 0980 00000000 		.word	led_event_counter
- 3755 0984 8F010000 		.word	399
- 3756 0988 2400E001 		.word	31457316
- 3757              		.cfi_endproc
- 3758              	.LFE7:
- 3760              		.align	2
- 3761              		.global	timer2_init
- 3763              	timer2_init:
- 3764              	.LFB8:
- 296:../timer.c    **** 
- 297:../timer.c    **** void timer2_init(void)
- 298:../timer.c    **** {
- 3765              		.loc 1 298 0
- 3766              		.cfi_startproc
- 3767              		@ Function supports interworking.
- 3768              		@ args = 0, pretend = 0, frame = 0
- 3769              		@ frame_needed = 1, uses_anonymous_args = 0
- 3770 098c 0DC0A0E1 		mov	ip, sp
- 3771              	.LCFI16:
- 3772              		.cfi_def_cfa_register 12
- 3773 0990 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 3774 0994 04B04CE2 		sub	fp, ip, #4
- 3775              		.cfi_offset 14, -8
- 3776              		.cfi_offset 13, -12
- 3777              		.cfi_offset 11, -16
- 3778              	.LCFI17:
- 3779              		.cfi_def_cfa 11, 4
- 299:../timer.c    **** 	rINTMOD = 0x0;
- 3780              		.loc 1 299 0
- 3781 0998 AC309FE5 		ldr	r3, .L71
- 3782 099c 0020A0E3 		mov	r2, #0
- 3783 09a0 002083E5 		str	r2, [r3, #0]
- 300:../timer.c    **** 	rINTCON = 0x1;
- 3784              		.loc 1 300 0
- 3785 09a4 1E36A0E3 		mov	r3, #31457280
- 3786 09a8 0120A0E3 		mov	r2, #1
- 3787 09ac 002083E5 		str	r2, [r3, #0]
- 301:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER2);
- 3788              		.loc 1 301 0
- 3789 09b0 98309FE5 		ldr	r3, .L71+4
- 3790 09b4 94209FE5 		ldr	r2, .L71+4
- 3791 09b8 002092E5 		ldr	r2, [r2, #0]
- 3792 09bc 022BC2E3 		bic	r2, r2, #2048
- 3793 09c0 002083E5 		str	r2, [r3, #0]
+ 294:../timer.c    **** 	unsigned int valor_cuenta = rTCNTO1; // Leer el valor actual del contador
+ 4028              		.loc 1 294 0
+ 4029 0a54 3C309FE5 		ldr	r3, .L59
+ 4030 0a58 003093E5 		ldr	r3, [r3, #0]
+ 4031 0a5c 10300BE5 		str	r3, [fp, #-16]
+ 295:../timer.c    **** 	// Calcular el tiempo transcurrido en el timer1
+ 296:../timer.c    **** 	// timer1_num_int * 64000 es el total de ticks de los ciclos completos
+ 297:../timer.c    **** 	// (2.0 / 33.0) es el factor de conversion de ticks a microsegundos
+ 298:../timer.c    **** 	unsigned int tiempo_transcurrido = (timer1_num_int * 65536) + (65535 - valor_cuenta);
+ 4032              		.loc 1 298 0
+ 4033 0a60 34309FE5 		ldr	r3, .L59+4
+ 4034 0a64 003093E5 		ldr	r3, [r3, #0]
+ 4035 0a68 0338A0E1 		mov	r3, r3, asl #16
+ 4036 0a6c 0320A0E1 		mov	r2, r3
+ 4037 0a70 10301BE5 		ldr	r3, [fp, #-16]
+ 4038 0a74 023063E0 		rsb	r3, r3, r2
+ 4039 0a78 FF3C83E2 		add	r3, r3, #65280
+ 4040 0a7c FF3083E2 		add	r3, r3, #255
+ 4041 0a80 14300BE5 		str	r3, [fp, #-20]
+ 299:../timer.c    **** 
+ 300:../timer.c    **** 	return tiempo_transcurrido;
+ 4042              		.loc 1 300 0
+ 4043 0a84 14301BE5 		ldr	r3, [fp, #-20]
+ 301:../timer.c    **** }
+ 4044              		.loc 1 301 0
+ 4045 0a88 0300A0E1 		mov	r0, r3
+ 4046 0a8c 0CD04BE2 		sub	sp, fp, #12
+ 4047 0a90 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 4048 0a94 1EFF2FE1 		bx	lr
+ 4049              	.L60:
+ 4050              		.align	2
+ 4051              	.L59:
+ 4052 0a98 2000D501 		.word	30736416
+ 4053 0a9c 00000000 		.word	timer1_num_int
+ 4054              		.cfi_endproc
+ 4055              	.LFE5:
+ 4057              		.align	2
+ 4058              		.global	timer1_parar
+ 4060              	timer1_parar:
+ 4061              	.LFB6:
  302:../timer.c    **** 
- 303:../timer.c    **** 	pISR_TIMER2 = (unsigned)timer2_ISR;
- 3794              		.loc 1 303 0
- 3795 09c4 88309FE5 		ldr	r3, .L71+8
- 3796 09c8 88209FE5 		ldr	r2, .L71+12
- 3797 09cc 002083E5 		str	r2, [r3, #0]
- 304:../timer.c    **** 
- 305:../timer.c    **** 	rTCFG0 = 0x8;
- 3798              		.loc 1 305 0
- 3799 09d0 84309FE5 		ldr	r3, .L71+16
- 3800 09d4 0820A0E3 		mov	r2, #8
- 3801 09d8 002083E5 		str	r2, [r3, #0]
- 306:../timer.c    **** 	rTCFG1 = 0x0;
- 3802              		.loc 1 306 0
- 3803 09dc 7C309FE5 		ldr	r3, .L71+20
- 3804 09e0 0020A0E3 		mov	r2, #0
- 3805 09e4 002083E5 		str	r2, [r3, #0]
- 307:../timer.c    **** 
- 308:../timer.c    **** 	rTCNTB2 = 100000;
- 3806              		.loc 1 308 0
- 3807 09e8 74309FE5 		ldr	r3, .L71+24
- 3808 09ec 74209FE5 		ldr	r2, .L71+28
- 3809 09f0 002083E5 		str	r2, [r3, #0]
- 309:../timer.c    **** 	rTCMPB2 = 0x0;
- 3810              		.loc 1 309 0
- 3811 09f4 70309FE5 		ldr	r3, .L71+32
- 3812 09f8 0020A0E3 		mov	r2, #0
- 3813 09fc 002083E5 		str	r2, [r3, #0]
- 310:../timer.c    **** 
- 311:../timer.c    **** 	rTCON |= (1 << 13); // Actualización manual
- 3814              		.loc 1 311 0
- 3815 0a00 68309FE5 		ldr	r3, .L71+36
- 3816 0a04 64209FE5 		ldr	r2, .L71+36
- 3817 0a08 002092E5 		ldr	r2, [r2, #0]
- 3818 0a0c 022A82E3 		orr	r2, r2, #8192
- 3819 0a10 002083E5 		str	r2, [r3, #0]
- 312:../timer.c    **** 	rTCON &= ~(1 << 15);
- 3820              		.loc 1 312 0
- 3821 0a14 54309FE5 		ldr	r3, .L71+36
- 3822 0a18 50209FE5 		ldr	r2, .L71+36
- 3823 0a1c 002092E5 		ldr	r2, [r2, #0]
- 3824 0a20 0229C2E3 		bic	r2, r2, #32768
- 3825 0a24 002083E5 		str	r2, [r3, #0]
+ 303:../timer.c    **** unsigned int timer1_parar()
+ 304:../timer.c    **** {
+ 4062              		.loc 1 304 0
+ 4063              		.cfi_startproc
+ 4064              		@ Function supports interworking.
+ 4065              		@ args = 0, pretend = 0, frame = 0
+ 4066              		@ frame_needed = 1, uses_anonymous_args = 0
+ 4067 0aa0 0DC0A0E1 		mov	ip, sp
+ 4068              	.LCFI12:
+ 4069              		.cfi_def_cfa_register 12
+ 4070 0aa4 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 4071 0aa8 04B04CE2 		sub	fp, ip, #4
+ 4072              		.cfi_offset 14, -8
+ 4073              		.cfi_offset 13, -12
+ 4074              		.cfi_offset 11, -16
+ 4075              	.LCFI13:
+ 4076              		.cfi_def_cfa 11, 4
+ 305:../timer.c    **** 	rTCON &= ~(0x1 << 8); // Desactivar el timer 1 (bit 9 y 11)
+ 4077              		.loc 1 305 0
+ 4078 0aac 24309FE5 		ldr	r3, .L62
+ 4079 0ab0 20209FE5 		ldr	r2, .L62
+ 4080 0ab4 002092E5 		ldr	r2, [r2, #0]
+ 4081 0ab8 012CC2E3 		bic	r2, r2, #256
+ 4082 0abc 002083E5 		str	r2, [r3, #0]
+ 306:../timer.c    **** 
+ 307:../timer.c    **** 	return timer1_leer();
+ 4083              		.loc 1 307 0
+ 4084 0ac0 FEFFFFEB 		bl	timer1_leer
+ 4085 0ac4 0030A0E1 		mov	r3, r0
+ 308:../timer.c    **** }
+ 4086              		.loc 1 308 0
+ 4087 0ac8 0300A0E1 		mov	r0, r3
+ 4088 0acc 0CD04BE2 		sub	sp, fp, #12
+ 4089 0ad0 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 4090 0ad4 1EFF2FE1 		bx	lr
+ 4091              	.L63:
+ 4092              		.align	2
+ 4093              	.L62:
+ 4094 0ad8 0800D501 		.word	30736392
+ 4095              		.cfi_endproc
+ 4096              	.LFE6:
+ 4098              		.align	2
+ 4099              		.global	timer2_ISR
+ 4101              	timer2_ISR:
+ 4102              	.LFB7:
+ 309:../timer.c    **** 
+ 310:../timer.c    **** void timer2_ISR(void)
+ 311:../timer.c    **** {
+ 4103              		.loc 1 311 0
+ 4104              		.cfi_startproc
+ 4105              		@ Interrupt Service Routine.
+ 4106              		@ args = 0, pretend = 0, frame = 0
+ 4107              		@ frame_needed = 1, uses_anonymous_args = 0
+ 4108 0adc 04C02DE5 		str	ip, [sp, #-4]!
+ 4109 0ae0 0DC0A0E1 		mov	ip, sp
+ 4110              	.LCFI14:
+ 4111              		.cfi_def_cfa_register 12
+ 4112 0ae4 0FD82DE9 		stmfd	sp!, {r0, r1, r2, r3, fp, ip, lr, pc}
+ 4113 0ae8 04B04CE2 		sub	fp, ip, #4
+ 4114              		.cfi_offset 14, -8
+ 4115              		.cfi_offset 13, -12
+ 4116              		.cfi_offset 11, -16
+ 4117              		.cfi_offset 3, -20
+ 4118              		.cfi_offset 2, -24
+ 4119              		.cfi_offset 1, -28
+ 4120              		.cfi_offset 0, -32
+ 4121              	.LCFI15:
+ 4122              		.cfi_def_cfa 11, 4
+ 312:../timer.c    **** 	led_event_counter++;
+ 4123              		.loc 1 312 0
+ 4124 0aec 6C309FE5 		ldr	r3, .L68
+ 4125 0af0 003093E5 		ldr	r3, [r3, #0]
+ 4126 0af4 012083E2 		add	r2, r3, #1
+ 4127 0af8 60309FE5 		ldr	r3, .L68
+ 4128 0afc 002083E5 		str	r2, [r3, #0]
  313:../timer.c    **** 
- 314:../timer.c    **** 	rTCON = (rTCON & ~(0x1 << 13)) | (0x1 << 15) | (0x1 << 12); // Auto-reload y Start
- 3826              		.loc 1 314 0
- 3827 0a28 40309FE5 		ldr	r3, .L71+36
- 3828 0a2c 3C209FE5 		ldr	r2, .L71+36
- 3829 0a30 002092E5 		ldr	r2, [r2, #0]
- 3830 0a34 0B2AC2E3 		bic	r2, r2, #45056
- 3831 0a38 092A82E3 		orr	r2, r2, #36864
- 3832 0a3c 002083E5 		str	r2, [r3, #0]
- 315:../timer.c    **** }
- 3833              		.loc 1 315 0
- 3834 0a40 0CD04BE2 		sub	sp, fp, #12
- 3835 0a44 00689DE8 		ldmfd	sp, {fp, sp, lr}
- 3836 0a48 1EFF2FE1 		bx	lr
- 3837              	.L72:
- 3838              		.align	2
- 3839              	.L71:
- 3840 0a4c 0800E001 		.word	31457288
- 3841 0a50 0C00E001 		.word	31457292
- 3842 0a54 4CFF7F0C 		.word	209715020
- 3843 0a58 00000000 		.word	timer2_ISR
- 3844 0a5c 0000D501 		.word	30736384
- 3845 0a60 0400D501 		.word	30736388
- 3846 0a64 2400D501 		.word	30736420
- 3847 0a68 A0860100 		.word	100000
- 3848 0a6c 2800D501 		.word	30736424
- 3849 0a70 0800D501 		.word	30736392
- 3850              		.cfi_endproc
- 3851              	.LFE8:
- 3853              	.Letext0:
+ 314:../timer.c    **** 	if (led_event_counter < 20)
+ 4129              		.loc 1 314 0
+ 4130 0b00 58309FE5 		ldr	r3, .L68
+ 4131 0b04 003093E5 		ldr	r3, [r3, #0]
+ 4132 0b08 130053E3 		cmp	r3, #19
+ 4133 0b0c 010000CA 		bgt	.L65
+ 4134              	.LBB4:
+ 315:../timer.c    **** 	{
+ 316:../timer.c    **** 		led2_on();
+ 4135              		.loc 1 316 0
+ 4136 0b10 FEFFFFEB 		bl	led2_on
+ 4137 0b14 080000EA 		b	.L66
+ 4138              	.L65:
+ 4139              	.LBE4:
+ 317:../timer.c    **** 	}
+ 318:../timer.c    **** 	else if (led_event_counter < 40)
+ 4140              		.loc 1 318 0
+ 4141 0b18 40309FE5 		ldr	r3, .L68
+ 4142 0b1c 003093E5 		ldr	r3, [r3, #0]
+ 4143 0b20 270053E3 		cmp	r3, #39
+ 4144 0b24 010000CA 		bgt	.L67
+ 4145              	.LBB5:
+ 319:../timer.c    **** 	{
+ 320:../timer.c    **** 		led2_off();
+ 4146              		.loc 1 320 0
+ 4147 0b28 FEFFFFEB 		bl	led2_off
+ 4148 0b2c 020000EA 		b	.L66
+ 4149              	.L67:
+ 4150              	.LBE5:
+ 321:../timer.c    **** 	}
+ 322:../timer.c    **** 	else
+ 323:../timer.c    **** 	{
+ 324:../timer.c    **** 		led_event_counter = 0; // Reiniciar el contador después de 160 eventos (2 segundos)
+ 4151              		.loc 1 324 0
+ 4152 0b30 28309FE5 		ldr	r3, .L68
+ 4153 0b34 0020A0E3 		mov	r2, #0
+ 4154 0b38 002083E5 		str	r2, [r3, #0]
+ 4155              	.L66:
+ 325:../timer.c    **** 	}
+ 326:../timer.c    **** 
+ 327:../timer.c    **** 	rI_ISPC |= BIT_TIMER2; // Limpiar la interrupción
+ 4156              		.loc 1 327 0
+ 4157 0b3c 20309FE5 		ldr	r3, .L68+4
+ 4158 0b40 1C209FE5 		ldr	r2, .L68+4
+ 4159 0b44 002092E5 		ldr	r2, [r2, #0]
+ 4160 0b48 022B82E3 		orr	r2, r2, #2048
+ 4161 0b4c 002083E5 		str	r2, [r3, #0]
+ 328:../timer.c    **** }
+ 4162              		.loc 1 328 0
+ 4163 0b50 1CD04BE2 		sub	sp, fp, #28
+ 4164 0b54 0F689DE8 		ldmfd	sp, {r0, r1, r2, r3, fp, sp, lr}
+ 4165 0b58 04C09DE4 		ldmfd	sp!, {ip}
+ 4166 0b5c 04F05EE2 		subs	pc, lr, #4
+ 4167              	.L69:
+ 4168              		.align	2
+ 4169              	.L68:
+ 4170 0b60 00000000 		.word	led_event_counter
+ 4171 0b64 2400E001 		.word	31457316
+ 4172              		.cfi_endproc
+ 4173              	.LFE7:
+ 4175              		.align	2
+ 4176              		.global	timer2_init
+ 4178              	timer2_init:
+ 4179              	.LFB8:
+ 329:../timer.c    **** 
+ 330:../timer.c    **** void timer2_init(void)
+ 331:../timer.c    **** {
+ 4180              		.loc 1 331 0
+ 4181              		.cfi_startproc
+ 4182              		@ Function supports interworking.
+ 4183              		@ args = 0, pretend = 0, frame = 0
+ 4184              		@ frame_needed = 1, uses_anonymous_args = 0
+ 4185 0b68 0DC0A0E1 		mov	ip, sp
+ 4186              	.LCFI16:
+ 4187              		.cfi_def_cfa_register 12
+ 4188 0b6c 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 4189 0b70 04B04CE2 		sub	fp, ip, #4
+ 4190              		.cfi_offset 14, -8
+ 4191              		.cfi_offset 13, -12
+ 4192              		.cfi_offset 11, -16
+ 4193              	.LCFI17:
+ 4194              		.cfi_def_cfa 11, 4
+ 332:../timer.c    **** 	rINTMOD = 0x0;
+ 4195              		.loc 1 332 0
+ 4196 0b74 AC309FE5 		ldr	r3, .L71
+ 4197 0b78 0020A0E3 		mov	r2, #0
+ 4198 0b7c 002083E5 		str	r2, [r3, #0]
+ 333:../timer.c    **** 	rINTCON = 0x1;
+ 4199              		.loc 1 333 0
+ 4200 0b80 1E36A0E3 		mov	r3, #31457280
+ 4201 0b84 0120A0E3 		mov	r2, #1
+ 4202 0b88 002083E5 		str	r2, [r3, #0]
+ 334:../timer.c    **** 	rINTMSK &= ~(BIT_TIMER2);
+ 4203              		.loc 1 334 0
+ 4204 0b8c 98309FE5 		ldr	r3, .L71+4
+ 4205 0b90 94209FE5 		ldr	r2, .L71+4
+ 4206 0b94 002092E5 		ldr	r2, [r2, #0]
+ 4207 0b98 022BC2E3 		bic	r2, r2, #2048
+ 4208 0b9c 002083E5 		str	r2, [r3, #0]
+ 335:../timer.c    **** 
+ 336:../timer.c    **** 	pISR_TIMER2 = (unsigned)timer2_ISR;
+ 4209              		.loc 1 336 0
+ 4210 0ba0 88309FE5 		ldr	r3, .L71+8
+ 4211 0ba4 88209FE5 		ldr	r2, .L71+12
+ 4212 0ba8 002083E5 		str	r2, [r3, #0]
+ 337:../timer.c    **** 
+ 338:../timer.c    **** 	rTCFG0 = (79 << 8);	 // Preescalador para Timer2 (79)
+ 4213              		.loc 1 338 0
+ 4214 0bac 84309FE5 		ldr	r3, .L71+16
+ 4215 0bb0 4F2CA0E3 		mov	r2, #20224
+ 4216 0bb4 002083E5 		str	r2, [r3, #0]
+ 339:../timer.c    **** 	rTCFG1 = (0x3 << 8); // Divisor de 8 para Timer2
+ 4217              		.loc 1 339 0
+ 4218 0bb8 7C309FE5 		ldr	r3, .L71+20
+ 4219 0bbc 032CA0E3 		mov	r2, #768
+ 4220 0bc0 002083E5 		str	r2, [r3, #0]
+ 340:../timer.c    **** 
+ 341:../timer.c    **** 	rTCNTB2 = 1250; // Valor del contador para 80 Hz
+ 4221              		.loc 1 341 0
+ 4222 0bc4 74309FE5 		ldr	r3, .L71+24
+ 4223 0bc8 74209FE5 		ldr	r2, .L71+28
+ 4224 0bcc 002083E5 		str	r2, [r3, #0]
+ 342:../timer.c    **** 	rTCMPB2 = 0x0;
+ 4225              		.loc 1 342 0
+ 4226 0bd0 70309FE5 		ldr	r3, .L71+32
+ 4227 0bd4 0020A0E3 		mov	r2, #0
+ 4228 0bd8 002083E5 		str	r2, [r3, #0]
+ 343:../timer.c    **** 
+ 344:../timer.c    **** 	rTCON |= (1 << 13); // Actualizaci�n manual
+ 4229              		.loc 1 344 0
+ 4230 0bdc 68309FE5 		ldr	r3, .L71+36
+ 4231 0be0 64209FE5 		ldr	r2, .L71+36
+ 4232 0be4 002092E5 		ldr	r2, [r2, #0]
+ 4233 0be8 022A82E3 		orr	r2, r2, #8192
+ 4234 0bec 002083E5 		str	r2, [r3, #0]
+ 345:../timer.c    **** 	rTCON &= ~(1 << 15);
+ 4235              		.loc 1 345 0
+ 4236 0bf0 54309FE5 		ldr	r3, .L71+36
+ 4237 0bf4 50209FE5 		ldr	r2, .L71+36
+ 4238 0bf8 002092E5 		ldr	r2, [r2, #0]
+ 4239 0bfc 0229C2E3 		bic	r2, r2, #32768
+ 4240 0c00 002083E5 		str	r2, [r3, #0]
+ 346:../timer.c    **** 
+ 347:../timer.c    **** 	rTCON = (rTCON & ~(0x1 << 13)) | (0x1 << 15) | (0x1 << 12); // Auto-reload y Start
+ 4241              		.loc 1 347 0
+ 4242 0c04 40309FE5 		ldr	r3, .L71+36
+ 4243 0c08 3C209FE5 		ldr	r2, .L71+36
+ 4244 0c0c 002092E5 		ldr	r2, [r2, #0]
+ 4245 0c10 0B2AC2E3 		bic	r2, r2, #45056
+ 4246 0c14 092A82E3 		orr	r2, r2, #36864
+ 4247 0c18 002083E5 		str	r2, [r3, #0]
+ 348:../timer.c    **** }
+ 4248              		.loc 1 348 0
+ 4249 0c1c 0CD04BE2 		sub	sp, fp, #12
+ 4250 0c20 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 4251 0c24 1EFF2FE1 		bx	lr
+ 4252              	.L72:
+ 4253              		.align	2
+ 4254              	.L71:
+ 4255 0c28 0800E001 		.word	31457288
+ 4256 0c2c 0C00E001 		.word	31457292
+ 4257 0c30 4CFF7F0C 		.word	209715020
+ 4258 0c34 00000000 		.word	timer2_ISR
+ 4259 0c38 0000D501 		.word	30736384
+ 4260 0c3c 0400D501 		.word	30736388
+ 4261 0c40 2400D501 		.word	30736420
+ 4262 0c44 E2040000 		.word	1250
+ 4263 0c48 2800D501 		.word	30736424
+ 4264 0c4c 0800D501 		.word	30736392
+ 4265              		.cfi_endproc
+ 4266              	.LFE8:
+ 4268              		.bss
+ 4269              		.align	2
+ 4270              	time_counter.4214:
+ 4271 001c 00000000 		.space	4
+ 4272              		.text
+ 4273              	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 timer.c
                             *COM*:00000004 switch_leds
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2761   .bss:00000000 timer1_num_int
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2758   .bss:00000000 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2767   .bss:00000004 led_event_counter
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2770   .bss:00000008 selected_row
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2773   .bss:0000000c selected_column
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2776   .bss:00000010 modifying_value
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2779   .text:00000000 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2782   .text:00000000 timer_ISR
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2820   .text:00000040 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2825   .text:00000048 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2828   .text:00000048 timer_init
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2894   .text:000000e0 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2907   .text:00000108 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2910   .text:00000108 timer1_inicializar
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3593   .text:00000860 timer1_leer
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:2994   .text:000001e0 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3009   .text:00000204 timer1_ISR
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3006   .text:00000204 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3047   .text:00000240 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3053   .text:00000250 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3091   .text:000002c4 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3098   .text:000002d8 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3511   .text:000007a4 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3531   .text:000007e8 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3534   .text:000007e8 timer1_empezar
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3584   .text:00000854 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3590   .text:00000860 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3635   .text:000008b4 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3640   .text:000008bc $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3643   .text:000008bc timer1_parar
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3677   .text:000008f4 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3681   .text:000008f8 $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3684   .text:000008f8 timer2_ISR
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3754   .text:00000980 $d
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3760   .text:0000098c $a
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3763   .text:0000098c timer2_init
-C:\Users\Jorge\AppData\Local\Temp\cc05FdMT.s:3840   .text:00000a4c $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3010   .bss:00000000 timer1_num_int
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3007   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3016   .bss:00000004 led_event_counter
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3022   .bss:00000008 game_started
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3028   .bss:0000000c time_counter
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3034   .bss:00000010 seconds
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3037   .bss:00000014 selected_row
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3040   .bss:00000018 selected_column
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3043   .data:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3046   .data:00000000 TRP
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3051   .data:00000004 TRD
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3054   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3057   .text:00000000 timer_ISR
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3179   .text:00000158 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4270   .bss:0000001c time_counter.4214
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3188   .text:00000170 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3191   .text:00000170 timer_init
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3267   .text:0000022c $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3280   .text:00000254 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3283   .text:00000254 timer1_inicializar
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3360   .text:00000314 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3375   .text:00000338 timer1_ISR
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3372   .text:00000338 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3413   .text:00000374 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3419   .text:00000384 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4010   .text:00000a44 timer1_leer
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3458   .text:000003fc $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3465   .text:00000410 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3927   .text:00000984 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3948   .text:000009cc $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:3951   .text:000009cc timer1_empezar
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4001   .text:00000a38 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4007   .text:00000a44 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4052   .text:00000a98 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4057   .text:00000aa0 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4060   .text:00000aa0 timer1_parar
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4094   .text:00000ad8 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4098   .text:00000adc $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4101   .text:00000adc timer2_ISR
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4170   .text:00000b60 $d
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4175   .text:00000b68 $a
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4178   .text:00000b68 timer2_init
+C:\Users\Jorge\AppData\Local\Temp\cc9hz1fT.s:4255   .text:00000c28 $d
                      .debug_frame:00000010 $d
 
 UNDEFINED SYMBOLS
+LcdClrRect
+Lcd_DspAscII8x16
+Lcd_Dma_Trans
 push_debug
 sudoku_candidatos_init_arm
+LCD_mostrar_sudoku
 celda_poner_valor
 cuadricula_candidatos_verificar
 sudoku_candidatos_propagar_arm

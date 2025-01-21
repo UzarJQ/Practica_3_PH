@@ -3,6 +3,11 @@
   "files.associations": {
     "sudoku_2024.h": "c",
     "def.h": "c",
-    "led.h": "c"
+    "led.h": "c",
+    "8led.h": "c",
+    "timer.h": "c",
+    "button.h": "c",
+    "44blib.h": "c",
+    "cola.h": "c"
   }
 }

@@ -11,14 +11,110 @@
   11              		.file	"main.c"
   21              	.Ltext0:
   22              		.file 1 "../main.c"
- 2773              		.align	2
- 2776              	switch_leds:
- 2777 0000 00000000 		.space	4
- 2778              		.text
- 2779              		.align	2
- 2780              		.global	Main
- 2782              	Main:
- 2783              	.LFB0:
+ 3022              		.align	2
+ 3025              	switch_leds:
+ 3026 0000 00000000 		.space	4
+ 3027              		.section	.rodata
+ 3028              		.align	2
+ 3029              	.LC0:
+ 3030 0000 5355444F 		.ascii	"SUDOKU 2024\000"
+ 3030      4B552032 
+ 3030      30323400 
+ 3031              		.align	2
+ 3032              	.LC1:
+ 3033 000c 494E5354 		.ascii	"INSTRUCCIONES:\000"
+ 3033      52554343 
+ 3033      494F4E45 
+ 3033      533A00
+ 3034 001b 00       		.align	2
+ 3035              	.LC2:
+ 3036 001c 456C2073 		.ascii	"El sudoku funciona mediante un contador\000"
+ 3036      75646F6B 
+ 3036      75206675 
+ 3036      6E63696F 
+ 3036      6E61206D 
+ 3037              		.align	2
+ 3038              	.LC3:
+ 3039 0044 71756520 		.ascii	"que va de 1 a 9.  Utiliza el boton\000"
+ 3039      76612064 
+ 3039      65203120 
+ 3039      6120392E 
+ 3039      20205574 
+ 3040 0067 00       		.align	2
+ 3041              	.LC4:
+ 3042 0068 697A7175 		.ascii	"izquierdo para incrementarlo.\000"
+ 3042      69657264 
+ 3042      6F207061 
+ 3042      72612069 
+ 3042      6E637265 
+ 3043 0086 0000     		.align	2
+ 3044              	.LC5:
+ 3045 0088 4375616E 		.ascii	"Cuando el contador llegue a 9 se\000"
+ 3045      646F2065 
+ 3045      6C20636F 
+ 3045      6E746164 
+ 3045      6F72206C 
+ 3046 00a9 000000   		.align	2
+ 3047              	.LC6:
+ 3048 00ac 7265696E 		.ascii	"reiniciara a 1.  Utiliza el boton\000"
+ 3048      69636961 
+ 3048      72612061 
+ 3048      20312E20 
+ 3048      20557469 
+ 3049 00ce 0000     		.align	2
+ 3050              	.LC7:
+ 3051 00d0 64657265 		.ascii	"derecho para confirmar el valor\000"
+ 3051      63686F20 
+ 3051      70617261 
+ 3051      20636F6E 
+ 3051      6669726D 
+ 3052              		.align	2
+ 3053              	.LC8:
+ 3054 00f0 5072696D 		.ascii	"Primero se debe seleccionar la fila,\000"
+ 3054      65726F20 
+ 3054      73652064 
+ 3054      65626520 
+ 3054      73656C65 
+ 3055 0115 000000   		.align	2
+ 3056              	.LC9:
+ 3057 0118 6C756567 		.ascii	"luego la columna y finalmente el valor.\000"
+ 3057      6F206C61 
+ 3057      20636F6C 
+ 3057      756D6E61 
+ 3057      20792066 
+ 3058              		.align	2
+ 3059              	.LC10:
+ 3060 0140 43616461 		.ascii	"Cada celda tiene posibles valores \000"
+ 3060      2063656C 
+ 3060      64612074 
+ 3060      69656E65 
+ 3060      20706F73 
+ 3061 0163 00       		.align	2
+ 3062              	.LC11:
+ 3063 0164 63616E64 		.ascii	"candidatos que seran representados\000"
+ 3063      69646174 
+ 3063      6F732071 
+ 3063      75652073 
+ 3063      6572616E 
+ 3064 0187 00       		.align	2
+ 3065              	.LC12:
+ 3066 0188 6D656469 		.ascii	"mediante un cuadro.\000"
+ 3066      616E7465 
+ 3066      20756E20 
+ 3066      63756164 
+ 3066      726F2E00 
+ 3067              		.align	2
+ 3068              	.LC13:
+ 3069 019c 50756C73 		.ascii	"Pulsa un boton para empezar.\000"
+ 3069      6120756E 
+ 3069      20626F74 
+ 3069      6F6E2070 
+ 3069      61726120 
+ 3070 01b9 000000   		.text
+ 3071              		.align	2
+ 3072              		.global	Main
+ 3074              	Main:
+ 3075              	.LFB0:
    1:../main.c     **** /*********************************************************************************************
    2:../main.c     ****  * Fichero:	main.c
    3:../main.c     ****  * Autor:
@@ -34,80 +130,225 @@
   13:../main.c     **** #include "44blib.h"
   14:../main.c     **** #include "44b.h"
   15:../main.c     **** #include "cola.h"
-  16:../main.c     **** 
-  17:../main.c     **** /*--- variables globales ---*/
+  16:../main.c     **** #include "Bmp.h"
+  17:../main.c     **** #include "lcd.h"
   18:../main.c     **** 
-  19:../main.c     **** int switch_leds = 0;
+  19:../main.c     **** /*--- variables globales ---*/
   20:../main.c     **** 
-  21:../main.c     **** /*--- codigo de funciones ---*/
-  22:../main.c     **** void Main(void)
-  23:../main.c     **** {
- 2784              		.loc 1 23 0
- 2785              		.cfi_startproc
- 2786              		@ Function supports interworking.
- 2787              		@ args = 0, pretend = 0, frame = 0
- 2788              		@ frame_needed = 1, uses_anonymous_args = 0
- 2789 0000 0DC0A0E1 		mov	ip, sp
- 2790              	.LCFI0:
- 2791              		.cfi_def_cfa_register 12
- 2792 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
- 2793 0008 04B04CE2 		sub	fp, ip, #4
- 2794              		.cfi_offset 14, -8
- 2795              		.cfi_offset 13, -12
- 2796              		.cfi_offset 11, -16
- 2797              	.LCFI1:
- 2798              		.cfi_def_cfa 11, 4
-  24:../main.c     **** 	/* Inicializa controladores */
-  25:../main.c     **** 	sys_init();						// Inicialización de la placa, interrupciones y puertos
- 2799              		.loc 1 25 0
- 2800 000c FEFFFFEB 		bl	sys_init
-  26:../main.c     **** 	timer_init();					// Inicialización del temporizador Timer0
- 2801              		.loc 1 26 0
- 2802 0010 FEFFFFEB 		bl	timer_init
-  27:../main.c     **** 	timer1_inicializar(); // Inicialización del Timer1
- 2803              		.loc 1 27 0
- 2804 0014 FEFFFFEB 		bl	timer1_inicializar
-  28:../main.c     **** 	timer2_init();				// Inicialización del Timer2 para el latido del LED
- 2805              		.loc 1 28 0
- 2806 0018 FEFFFFEB 		bl	timer2_init
-  29:../main.c     **** 	Eint4567_init();			// Inicializar los pulsadores
- 2807              		.loc 1 29 0
- 2808 001c FEFFFFEB 		bl	Eint4567_init
-  30:../main.c     **** 	D8Led_init();					// Inicializar el display 8 LED
- 2809              		.loc 1 30 0
- 2810 0020 FEFFFFEB 		bl	D8Led_init
-  31:../main.c     **** 
-  32:../main.c     **** 	/* Valor inicial de los leds */
-  33:../main.c     **** 	leds_off(); // Apagar todos los LEDS
- 2811              		.loc 1 33 0
- 2812 0024 FEFFFFEB 		bl	leds_off
-  34:../main.c     **** 	led1_on();	// Encender el LED derecho inicialmente
- 2813              		.loc 1 34 0
- 2814 0028 FEFFFFEB 		bl	led1_on
- 2815              	.L2:
+  21:../main.c     **** int switch_leds = 0;
+  22:../main.c     **** 
+  23:../main.c     **** /*--- codigo de funciones ---*/
+  24:../main.c     **** void Main(void)
+  25:../main.c     **** {
+ 3076              		.loc 1 25 0
+ 3077              		.cfi_startproc
+ 3078              		@ Function supports interworking.
+ 3079              		@ args = 0, pretend = 0, frame = 8
+ 3080              		@ frame_needed = 1, uses_anonymous_args = 0
+ 3081 0000 0DC0A0E1 		mov	ip, sp
+ 3082              	.LCFI0:
+ 3083              		.cfi_def_cfa_register 12
+ 3084 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 3085 0008 04B04CE2 		sub	fp, ip, #4
+ 3086              		.cfi_offset 14, -8
+ 3087              		.cfi_offset 13, -12
+ 3088              		.cfi_offset 11, -16
+ 3089              	.LCFI1:
+ 3090              		.cfi_def_cfa 11, 4
+ 3091 000c 08D04DE2 		sub	sp, sp, #8
+  26:../main.c     **** 	int seconds = 0;
+ 3092              		.loc 1 26 0
+ 3093 0010 0030A0E3 		mov	r3, #0
+ 3094 0014 10300BE5 		str	r3, [fp, #-16]
+  27:../main.c     **** 	char time[3];
+  28:../main.c     **** 	/* Inicializa controladores */
+  29:../main.c     **** 	sys_init();						// Inicialización de la placa, interrupciones y puertos
+ 3095              		.loc 1 29 0
+ 3096 0018 FEFFFFEB 		bl	sys_init
+  30:../main.c     **** 	timer_init();					// Inicialización del temporizador Timer0
+ 3097              		.loc 1 30 0
+ 3098 001c FEFFFFEB 		bl	timer_init
+  31:../main.c     **** 	timer1_inicializar(); // Inicialización del Timer1
+ 3099              		.loc 1 31 0
+ 3100 0020 FEFFFFEB 		bl	timer1_inicializar
+  32:../main.c     **** 	timer2_init();				// Inicialización del Timer2 para el latido del LED
+ 3101              		.loc 1 32 0
+ 3102 0024 FEFFFFEB 		bl	timer2_init
+  33:../main.c     **** 	Eint4567_init();			// Inicializar los pulsadores
+ 3103              		.loc 1 33 0
+ 3104 0028 FEFFFFEB 		bl	Eint4567_init
+  34:../main.c     **** 	D8Led_init();					// Inicializar el display 8 LED
+ 3105              		.loc 1 34 0
+ 3106 002c FEFFFFEB 		bl	D8Led_init
   35:../main.c     **** 
-  36:../main.c     **** 	while (1)
-  37:../main.c     **** 	{
-  38:../main.c     **** 		/* Cambia los leds con cada interrupcion del temporizador */
-  39:../main.c     **** 		//		if (switch_leds == 1)
-  40:../main.c     **** 		//		{
-  41:../main.c     **** 		//			leds_switch();
-  42:../main.c     **** 		//			switch_leds = 0;
-  43:../main.c     **** 		//		}
-  44:../main.c     **** 
-  45:../main.c     **** 		/* Llamada para gestionar el estado del botón */
-  46:../main.c     **** 	}
- 2816              		.loc 1 46 0 discriminator 1
- 2817 002c FEFFFFEA 		b	.L2
- 2818              		.cfi_endproc
- 2819              	.LFE0:
- 2821              	.Letext0:
+  36:../main.c     **** 	/* initial LCD controller */
+  37:../main.c     **** 	Lcd_Init();
+ 3107              		.loc 1 37 0
+ 3108 0030 FEFFFFEB 		bl	Lcd_Init
+  38:../main.c     **** 	/* clear screen */
+  39:../main.c     **** 	Lcd_Clr();
+ 3109              		.loc 1 39 0
+ 3110 0034 FEFFFFEB 		bl	Lcd_Clr
+  40:../main.c     **** 	Lcd_Active_Clr();
+ 3111              		.loc 1 40 0
+ 3112 0038 FEFFFFEB 		bl	Lcd_Active_Clr
+  41:../main.c     **** 
+  42:../main.c     **** 	Lcd_DspAscII8x16(10, 0, BLACK, "SUDOKU 2024");
+ 3113              		.loc 1 42 0
+ 3114 003c 0A00A0E3 		mov	r0, #10
+ 3115 0040 0010A0E3 		mov	r1, #0
+ 3116 0044 0F20A0E3 		mov	r2, #15
+ 3117 0048 14319FE5 		ldr	r3, .L3
+ 3118 004c FEFFFFEB 		bl	Lcd_DspAscII8x16
+  43:../main.c     **** 	Lcd_DspAscII8x16(10, 15, BLACK, "INSTRUCCIONES:");
+ 3119              		.loc 1 43 0
+ 3120 0050 0A00A0E3 		mov	r0, #10
+ 3121 0054 0F10A0E3 		mov	r1, #15
+ 3122 0058 0F20A0E3 		mov	r2, #15
+ 3123 005c 04319FE5 		ldr	r3, .L3+4
+ 3124 0060 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  44:../main.c     **** 	Lcd_DspAscII8x16(10, 30, BLACK, "El sudoku funciona mediante un contador");
+ 3125              		.loc 1 44 0
+ 3126 0064 0A00A0E3 		mov	r0, #10
+ 3127 0068 1E10A0E3 		mov	r1, #30
+ 3128 006c 0F20A0E3 		mov	r2, #15
+ 3129 0070 F4309FE5 		ldr	r3, .L3+8
+ 3130 0074 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  45:../main.c     **** 	Lcd_DspAscII8x16(10, 45, BLACK, "que va de 1 a 9.  Utiliza el boton");
+ 3131              		.loc 1 45 0
+ 3132 0078 0A00A0E3 		mov	r0, #10
+ 3133 007c 2D10A0E3 		mov	r1, #45
+ 3134 0080 0F20A0E3 		mov	r2, #15
+ 3135 0084 E4309FE5 		ldr	r3, .L3+12
+ 3136 0088 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  46:../main.c     **** 	Lcd_DspAscII8x16(10, 60, BLACK, "izquierdo para incrementarlo.");
+ 3137              		.loc 1 46 0
+ 3138 008c 0A00A0E3 		mov	r0, #10
+ 3139 0090 3C10A0E3 		mov	r1, #60
+ 3140 0094 0F20A0E3 		mov	r2, #15
+ 3141 0098 D4309FE5 		ldr	r3, .L3+16
+ 3142 009c FEFFFFEB 		bl	Lcd_DspAscII8x16
+  47:../main.c     **** 	Lcd_DspAscII8x16(10, 75, BLACK, "Cuando el contador llegue a 9 se");
+ 3143              		.loc 1 47 0
+ 3144 00a0 0A00A0E3 		mov	r0, #10
+ 3145 00a4 4B10A0E3 		mov	r1, #75
+ 3146 00a8 0F20A0E3 		mov	r2, #15
+ 3147 00ac C4309FE5 		ldr	r3, .L3+20
+ 3148 00b0 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  48:../main.c     **** 	Lcd_DspAscII8x16(10, 90, BLACK, "reiniciara a 1.  Utiliza el boton");
+ 3149              		.loc 1 48 0
+ 3150 00b4 0A00A0E3 		mov	r0, #10
+ 3151 00b8 5A10A0E3 		mov	r1, #90
+ 3152 00bc 0F20A0E3 		mov	r2, #15
+ 3153 00c0 B4309FE5 		ldr	r3, .L3+24
+ 3154 00c4 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  49:../main.c     **** 	Lcd_DspAscII8x16(10, 105, BLACK, "derecho para confirmar el valor");
+ 3155              		.loc 1 49 0
+ 3156 00c8 0A00A0E3 		mov	r0, #10
+ 3157 00cc 6910A0E3 		mov	r1, #105
+ 3158 00d0 0F20A0E3 		mov	r2, #15
+ 3159 00d4 A4309FE5 		ldr	r3, .L3+28
+ 3160 00d8 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  50:../main.c     **** 	Lcd_DspAscII8x16(10, 120, BLACK, "Primero se debe seleccionar la fila,");
+ 3161              		.loc 1 50 0
+ 3162 00dc 0A00A0E3 		mov	r0, #10
+ 3163 00e0 7810A0E3 		mov	r1, #120
+ 3164 00e4 0F20A0E3 		mov	r2, #15
+ 3165 00e8 94309FE5 		ldr	r3, .L3+32
+ 3166 00ec FEFFFFEB 		bl	Lcd_DspAscII8x16
+  51:../main.c     **** 	Lcd_DspAscII8x16(10, 135, BLACK, "luego la columna y finalmente el valor.");
+ 3167              		.loc 1 51 0
+ 3168 00f0 0A00A0E3 		mov	r0, #10
+ 3169 00f4 8710A0E3 		mov	r1, #135
+ 3170 00f8 0F20A0E3 		mov	r2, #15
+ 3171 00fc 84309FE5 		ldr	r3, .L3+36
+ 3172 0100 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  52:../main.c     **** 	Lcd_DspAscII8x16(10, 150, BLACK, "Cada celda tiene posibles valores ");
+ 3173              		.loc 1 52 0
+ 3174 0104 0A00A0E3 		mov	r0, #10
+ 3175 0108 9610A0E3 		mov	r1, #150
+ 3176 010c 0F20A0E3 		mov	r2, #15
+ 3177 0110 74309FE5 		ldr	r3, .L3+40
+ 3178 0114 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  53:../main.c     **** 	Lcd_DspAscII8x16(10, 165, BLACK, "candidatos que seran representados");
+ 3179              		.loc 1 53 0
+ 3180 0118 0A00A0E3 		mov	r0, #10
+ 3181 011c A510A0E3 		mov	r1, #165
+ 3182 0120 0F20A0E3 		mov	r2, #15
+ 3183 0124 64309FE5 		ldr	r3, .L3+44
+ 3184 0128 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  54:../main.c     **** 	Lcd_DspAscII8x16(10, 180, BLACK, "mediante un cuadro.");
+ 3185              		.loc 1 54 0
+ 3186 012c 0A00A0E3 		mov	r0, #10
+ 3187 0130 B410A0E3 		mov	r1, #180
+ 3188 0134 0F20A0E3 		mov	r2, #15
+ 3189 0138 54309FE5 		ldr	r3, .L3+48
+ 3190 013c FEFFFFEB 		bl	Lcd_DspAscII8x16
+  55:../main.c     **** 
+  56:../main.c     **** 	Lcd_DspAscII8x16(10, 200, BLACK, "Pulsa un boton para empezar.");
+ 3191              		.loc 1 56 0
+ 3192 0140 0A00A0E3 		mov	r0, #10
+ 3193 0144 C810A0E3 		mov	r1, #200
+ 3194 0148 0F20A0E3 		mov	r2, #15
+ 3195 014c 44309FE5 		ldr	r3, .L3+52
+ 3196 0150 FEFFFFEB 		bl	Lcd_DspAscII8x16
+  57:../main.c     **** 	// Actualiza la pantalla
+  58:../main.c     **** 	// BitmapView(125, 135, Stru_Bitmap_gbMouse);
+  59:../main.c     **** 	Lcd_Dma_Trans();
+ 3197              		.loc 1 59 0
+ 3198 0154 FEFFFFEB 		bl	Lcd_Dma_Trans
+  60:../main.c     **** 
+  61:../main.c     **** 	/* Valor inicial de los leds */
+  62:../main.c     **** 	leds_off(); // Apagar todos los LEDS
+ 3199              		.loc 1 62 0
+ 3200 0158 FEFFFFEB 		bl	leds_off
+  63:../main.c     **** 	led1_on();	// Encender el LED derecho inicialmente
+ 3201              		.loc 1 63 0
+ 3202 015c FEFFFFEB 		bl	led1_on
+ 3203              	.L2:
+  64:../main.c     **** 
+  65:../main.c     **** 	while (1)
+  66:../main.c     **** 	{
+  67:../main.c     **** 
+  68:../main.c     **** 		/* Cambia los leds con cada interrupcion del temporizador */
+  69:../main.c     **** 		//		if (switch_leds == 1)
+  70:../main.c     **** 		//		{
+  71:../main.c     **** 		//			leds_switch();
+  72:../main.c     **** 		//			switch_leds = 0;
+  73:../main.c     **** 		//		}
+  74:../main.c     **** 
+  75:../main.c     **** 		/* Llamada para gestionar el estado del botón */
+  76:../main.c     **** 	}
+ 3204              		.loc 1 76 0 discriminator 1
+ 3205 0160 FEFFFFEA 		b	.L2
+ 3206              	.L4:
+ 3207              		.align	2
+ 3208              	.L3:
+ 3209 0164 00000000 		.word	.LC0
+ 3210 0168 0C000000 		.word	.LC1
+ 3211 016c 1C000000 		.word	.LC2
+ 3212 0170 44000000 		.word	.LC3
+ 3213 0174 68000000 		.word	.LC4
+ 3214 0178 88000000 		.word	.LC5
+ 3215 017c AC000000 		.word	.LC6
+ 3216 0180 D0000000 		.word	.LC7
+ 3217 0184 F0000000 		.word	.LC8
+ 3218 0188 18010000 		.word	.LC9
+ 3219 018c 40010000 		.word	.LC10
+ 3220 0190 64010000 		.word	.LC11
+ 3221 0194 88010000 		.word	.LC12
+ 3222 0198 9C010000 		.word	.LC13
+ 3223              		.cfi_endproc
+ 3224              	.LFE0:
+ 3226              	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-C:\Users\Jorge\AppData\Local\Temp\cco29aqf.s:2776   .bss:00000000 switch_leds
-C:\Users\Jorge\AppData\Local\Temp\cco29aqf.s:2773   .bss:00000000 $d
-C:\Users\Jorge\AppData\Local\Temp\cco29aqf.s:2779   .text:00000000 $a
-C:\Users\Jorge\AppData\Local\Temp\cco29aqf.s:2782   .text:00000000 Main
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3025   .bss:00000000 switch_leds
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3022   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3028   .rodata:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3071   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3074   .text:00000000 Main
+C:\Users\Jorge\AppData\Local\Temp\ccUUmwDB.s:3209   .text:00000164 $d
                      .debug_frame:00000010 $d
 
 UNDEFINED SYMBOLS
@@ -117,5 +358,10 @@ timer1_inicializar
 timer2_init
 Eint4567_init
 D8Led_init
+Lcd_Init
+Lcd_Clr
+Lcd_Active_Clr
+Lcd_DspAscII8x16
+Lcd_Dma_Trans
 leds_off
 led1_on

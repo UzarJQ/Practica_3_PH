@@ -129,11 +129,11 @@
 DEFINED SYMBOLS
                             *ABS*:00000000 cola.c
                             *COM*:000004b0 pila_debug
-C:\Users\Jorge\AppData\Local\Temp\ccu468rc.s:1247   .bss:00000000 indice_pila
-C:\Users\Jorge\AppData\Local\Temp\ccu468rc.s:1244   .bss:00000000 $d
-C:\Users\Jorge\AppData\Local\Temp\ccu468rc.s:1250   .text:00000000 $a
-C:\Users\Jorge\AppData\Local\Temp\ccu468rc.s:1253   .text:00000000 push_debug
-C:\Users\Jorge\AppData\Local\Temp\ccu468rc.s:1334   .text:000000ec $d
+C:\Users\Jorge\AppData\Local\Temp\cclZ5ewu.s:1247   .bss:00000000 indice_pila
+C:\Users\Jorge\AppData\Local\Temp\cclZ5ewu.s:1244   .bss:00000000 $d
+C:\Users\Jorge\AppData\Local\Temp\cclZ5ewu.s:1250   .text:00000000 $a
+C:\Users\Jorge\AppData\Local\Temp\cclZ5ewu.s:1253   .text:00000000 push_debug
+C:\Users\Jorge\AppData\Local\Temp\cclZ5ewu.s:1334   .text:000000ec $d
                      .debug_frame:00000010 $d
 
 NO UNDEFINED SYMBOLS

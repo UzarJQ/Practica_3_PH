@@ -4,17 +4,23 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../common/44blib.c 
+../common/44blib.c \
+../common/AscII6x8.c \
+../common/AscII8x16.c 
 
 ASM_SRCS += \
 ../common/44binit.asm 
 
 OBJS += \
 ./common/44binit.o \
-./common/44blib.o 
+./common/44blib.o \
+./common/AscII6x8.o \
+./common/AscII8x16.o 
 
 C_DEPS += \
-./common/44blib.d 
+./common/44blib.d \
+./common/AscII6x8.d \
+./common/AscII8x16.d 
 
 ASM_DEPS += \
 ./common/44binit.d 

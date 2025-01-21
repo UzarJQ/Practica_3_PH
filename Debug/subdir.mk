@@ -5,8 +5,10 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../8led.c \
+../Bmp.c \
 ../button.c \
 ../cola.c \
+../lcd.c \
 ../led.c \
 ../main.c \
 ../sudoku_2024.c \
@@ -14,8 +16,10 @@ C_SRCS += \
 
 OBJS += \
 ./8led.o \
+./Bmp.o \
 ./button.o \
 ./cola.o \
+./lcd.o \
 ./led.o \
 ./main.o \
 ./sudoku_2024.o \
@@ -23,8 +27,10 @@ OBJS += \
 
 C_DEPS += \
 ./8led.d \
+./Bmp.d \
 ./button.d \
 ./cola.d \
+./lcd.d \
 ./led.d \
 ./main.d \
 ./sudoku_2024.d \

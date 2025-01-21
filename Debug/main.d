@@ -3,7 +3,8 @@ main.d main.o: ../main.c ../8led.h ../button.h ../sudoku_2024.h ../led.h \
  C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/44b.h \
  C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/option.h \
  C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/../button.h ../cola.h \
- ../eventos.h
+ ../eventos.h ../Bmp.h \
+ C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/def.h ../lcd.h
 
 ../8led.h:
 
@@ -26,3 +27,9 @@ C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/../button.h:
 ../cola.h:
 
 ../eventos.h:
+
+../Bmp.h:
+
+C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/def.h:
+
+../lcd.h:

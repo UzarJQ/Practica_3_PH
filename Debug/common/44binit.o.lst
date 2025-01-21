@@ -536,529 +536,532 @@
  254              	    #****************************************************
  255              	    #*	Set memory control registers					* 	
  256              	    #****************************************************
- 257 0484 1C029FE5 	    ldr	    r0,=SMRDATA
- 258 0488 FE3F90E8 	    ldmia   r0,{r1-r13}
- 259 048c 7207A0E3 	    ldr	    r0,=0x01c80000  	/* BWSCON Address */
- 260 0490 FE3F80E8 	    stmia   r0,{r1-r13}
- 261              	
- 262              	    #;****************************************************
- 263              	    #;*	Initialize stacks								* 
- 264              	    #;****************************************************
- 265 0494 10D29FE5 	    ldr	    sp, =SVCStack		/* Why	*/		
- 266 0498 150000EB 	    bl	    InitStacks
- 267              	
- 268              	    #;****************************************************
- 269              	    #;*	Setup IRQ handler								*
- 270              	    #;****************************************************
- 271 049c 60019FE5 	    ldr	    r0,=HandleIRQ		/* This routine is needed */
- 272 04a0 08129FE5 	    ldr	    r1,=IsrIRQ			/* if there is not 'subs pc,lr,#4' at 0x18, 0x1c */
- 273 04a4 001080E5 	    str	    r1,[r0]
- 274              	
- 275              	    #********************************************************
- 276              	    #*	Copy and paste RW data/zero initialized data	    *
- 277              	    #********************************************************
- 278 04a8 04029FE5 	    LDR	    r0, =Image_RO_Limit	/* Get pointer to ROM data */
- 279 04ac 04129FE5 	    LDR	    r1, =Image_RW_Base	/* and RAM copy	*/
- 280 04b0 04329FE5 	    LDR	    r3, =Image_ZI_Base	
- 281              		/* Zero init base => top of initialised data */
- 282              				
- 283 04b4 010050E1 	    CMP	    r0, r1	    		/* Check that they are different */
- 284 04b8 0300000A 	    BEQ	    F1
- 285              	F0:
- 286 04bc 030051E1 	    CMP	    r1, r3				/* Copy init data                        */
- 287 04c0 04209034 	    LDRCC   r2, [r0], #4        /* --> LDRCC r2, [r0] + ADD r0, r0, #4	 */
- 288 04c4 04208134 	    STRCC   r2, [r1], #4        /* --> STRCC r2, [r1] + ADD r1, r1, #4   */ 
- 289 04c8 FBFFFF3A 	    BCC	    F0
- 290              	F1:
- 291 04cc EC119FE5 	    LDR	    r1, =Image_ZI_Limit	/* Top of zero init segment */
- 292 04d0 0020A0E3 	    MOV	    r2, #0
- 293              	F2:
- 294 04d4 010053E1 	    CMP	    r3, r1	    		/* Zero init */
- 295 04d8 04208334 	    STRCC   r2, [r3], #4
- 296 04dc FCFFFF3A 	    BCC	    F2
- 297              	
- 298 04e0 00000FE1 		MRS	r0, CPSR
- 299 04e4 C000C0E3 		BIC	r0, r0, #NOINT /* enable interrupt */
- 300 04e8 00F02FE1 		MSR	CPSR_cxsf, r0
- 301              		/* jump to main() */
- 302 04ec FEFFFFEB 	   	BL	Main
- 303 04f0 FEFFFFEA 	   	B   .	    
- 304              	
- 305              	#;****************************************************
- 306              	#;*	The function for initializing stack				*
- 307              	#;****************************************************
- 308              	InitStacks:
- 309              		# Don't use DRAM,such as stmfd,ldmfd......
- 310              		# SVCstack is initialized before
- 311              		# Under toolkit ver 2.50, 'msr cpsr,r1' can be used instead of 'msr cpsr_cxsf,r1'
- 312              	
- 313 04f4 00000FE1 	    mrs	    r0,cpsr
- 314 04f8 1F00C0E3 	    bic	    r0,r0,#MODEMASK
- 315 04fc 1B1080E3 	    orr	    r1,r0,#UNDEFMODE
- 316 0500 01F02FE1 	    msr	    cpsr_cxsf,r1		/* UndefMode */
- 317 0504 B8D19FE5 	    ldr	    sp,=UndefStack
- 318              		
- 319 0508 D71080E3 	    orr	    r1,r0,#ABORTMODE|NOINT
- 320 050c 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* AbortMode */	
- 321 0510 B0D19FE5 	    ldr	    sp,=AbortStack
- 322              	
- 323 0514 921080E3 	    orr	    r1,r0,#IRQMODE|FIQ_MODE
- 324 0518 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* IRQMode */
- 325 051c A8D19FE5 	    ldr	    sp,=IRQStack
- 326              		
- 327 0520 511080E3 	    orr	    r1,r0,#FIQMODE|IRQ_MODE
- 328 0524 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* FIQMode */
- 329 0528 A0D19FE5 	    ldr	    sp,=FIQStack
- 330              	
- 331 052c 1F00C0E3 	    bic	    r0,r0,#MODEMASK
- 332 0530 131080E3 	    orr	    r1,r0,#SVCMODE
- 333 0534 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* SVCMode */
- 334 0538 6CD19FE5 	    ldr	    sp,=SVCStack
- 335              	
- 336              		#USER mode is not initialized.
- 337 053c 0EF0A0E1 	    mov	    pc,lr 				/* The LR register may be not valid for the mode changes. */
+ 257              	    /*ldr	    r0,=SMRDATA*/
+ 258 0484 1C029FE5 	    ldr     r0, =(SMRDATA-0xc000000)
+ 259 0488 FE3F90E8 	    ldmia   r0,{r1-r13}
+ 260 048c 7207A0E3 	    ldr	    r0,=0x01c80000  	/* BWSCON Address */
+ 261 0490 FE3F80E8 	    stmia   r0,{r1-r13}
+ 262              	
+ 263              	    #;****************************************************
+ 264              	    #;*	Initialize stacks								* 
+ 265              	    #;****************************************************
+ 266 0494 10D29FE5 	    ldr	    sp, =SVCStack		/* Why	*/		
+ 267 0498 150000EB 	    bl	    InitStacks
+ 268              	
+ 269              	    #;****************************************************
+ 270              	    #;*	Setup IRQ handler								*
+ 271              	    #;****************************************************
+ 272 049c 60019FE5 	    ldr	    r0,=HandleIRQ		/* This routine is needed */
+ 273 04a0 08129FE5 	    ldr	    r1,=IsrIRQ			/* if there is not 'subs pc,lr,#4' at 0x18, 0x1c */
+ 274 04a4 001080E5 	    str	    r1,[r0]
+ 275              	
+ 276              	    #********************************************************
+ 277              	    #*	Copy and paste RW data/zero initialized data	    *
+ 278              	    #********************************************************
+ 279              	    // LDR	    r0, =Image_RO_Limit	/* Get pointer to ROM data */
+ 280              	    // LDR	    r1, =Image_RW_Base	/* and RAM copy	*/
+ 281 04a8 0000A0E3 	    LDR r0,     =0
+ 282 04ac 00129FE5 	    LDR r1,     =Image_ZI_Base
+ 283 04b0 FC319FE5 	    LDR	    r3, =Image_ZI_Base	
+ 284              		/* Zero init base => top of initialised data */
+ 285              				
+ 286 04b4 010050E1 	    CMP	    r0, r1	    		/* Check that they are different */
+ 287 04b8 0300000A 	    BEQ	    F1
+ 288              	F0:
+ 289 04bc 030051E1 	    CMP	    r1, r3				/* Copy init data                        */
+ 290 04c0 04209034 	    LDRCC   r2, [r0], #4        /* --> LDRCC r2, [r0] + ADD r0, r0, #4	 */
+ 291 04c4 04208134 	    STRCC   r2, [r1], #4        /* --> STRCC r2, [r1] + ADD r1, r1, #4   */ 
+ 292 04c8 FBFFFF3A 	    BCC	    F0
+ 293              	F1:
+ 294 04cc E4119FE5 	    LDR	    r1, =Image_ZI_Limit	/* Top of zero init segment */
+ 295 04d0 0020A0E3 	    MOV	    r2, #0
+ 296              	F2:
+ 297 04d4 010053E1 	    CMP	    r3, r1	    		/* Zero init */
+ 298 04d8 04208334 	    STRCC   r2, [r3], #4
+ 299 04dc FCFFFF3A 	    BCC	    F2
+ 300              	
+ 301 04e0 00000FE1 		MRS	r0, CPSR
+ 302 04e4 C000C0E3 		BIC	r0, r0, #NOINT /* enable interrupt */
+ 303 04e8 00F02FE1 		MSR	CPSR_cxsf, r0
+ 304              		/* jump to main() */
+ 305 04ec FEFFFFEB 	   	BL	Main
+ 306 04f0 FEFFFFEA 	   	B   .	    
+ 307              	
+ 308              	#;****************************************************
+ 309              	#;*	The function for initializing stack				*
+ 310              	#;****************************************************
+ 311              	InitStacks:
+ 312              		# Don't use DRAM,such as stmfd,ldmfd......
+ 313              		# SVCstack is initialized before
+ 314              		# Under toolkit ver 2.50, 'msr cpsr,r1' can be used instead of 'msr cpsr_cxsf,r1'
+ 315              	
+ 316 04f4 00000FE1 	    mrs	    r0,cpsr
+ 317 04f8 1F00C0E3 	    bic	    r0,r0,#MODEMASK
+ 318 04fc 1B1080E3 	    orr	    r1,r0,#UNDEFMODE
+ 319 0500 01F02FE1 	    msr	    cpsr_cxsf,r1		/* UndefMode */
+ 320 0504 B0D19FE5 	    ldr	    sp,=UndefStack
+ 321              		
+ 322 0508 D71080E3 	    orr	    r1,r0,#ABORTMODE|NOINT
+ 323 050c 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* AbortMode */	
+ 324 0510 A8D19FE5 	    ldr	    sp,=AbortStack
+ 325              	
+ 326 0514 921080E3 	    orr	    r1,r0,#IRQMODE|FIQ_MODE
+ 327 0518 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* IRQMode */
+ 328 051c A0D19FE5 	    ldr	    sp,=IRQStack
+ 329              		
+ 330 0520 511080E3 	    orr	    r1,r0,#FIQMODE|IRQ_MODE
+ 331 0524 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* FIQMode */
+ 332 0528 98D19FE5 	    ldr	    sp,=FIQStack
+ 333              	
+ 334 052c 1F00C0E3 	    bic	    r0,r0,#MODEMASK
+ 335 0530 131080E3 	    orr	    r1,r0,#SVCMODE
+ 336 0534 01F02FE1 	    msr	    cpsr_cxsf,r1 	    /* SVCMode */
+ 337 0538 6CD19FE5 	    ldr	    sp,=SVCStack
  338              	
- 339              	#****************************************************
- 340              	#*	The function for entering power down mode		*
- 341              	#****************************************************
- 342              	#void EnterPWDN(int CLKCON);
- 343              	EnterPWDN:
- 344 0540 0020A0E1 	    mov	    r2,r0               /* r0=CLKCON */
- 345 0544 88019FE5 	    ldr	    r0,=REFRESH		
- 346 0548 003090E5 	    ldr	    r3,[r0]
- 347 054c 0310A0E1 	    mov	    r1, r3
- 348 0550 011581E3 	    orr	    r1, r1, #0x400000   /* self-refresh enable */
- 349 0554 001080E5 	    str	    r1, [r0]
- 350              	
- 351 0558 0000A0E1 	    nop     /* Wait until self-refresh is issued. May not be needed. */
- 352 055c 0000A0E1 	    nop     /* If the other bus master holds the bus, ... */
- 353 0560 0000A0E1 	    nop	    /* mov r0, r0 */
- 354 0564 0000A0E1 	    nop
- 355 0568 0000A0E1 	    nop
- 356 056c 0000A0E1 	    nop
- 357 0570 0000A0E1 	    nop
- 358              	
- 359              	#enter POWERDN mode
- 360 0574 1C019FE5 	    ldr	    r0,=CLKCON
- 361 0578 002080E5 	    str	    r2,[r0]
- 362              	
- 363              	#wait until enter SL_IDLE,STOP mode and until wake-up
- 364 057c 1000A0E3 	    ldr	    r0,=0x10
- 365 0580 010050E2 	U0: subs    r0,r0,#1
- 366 0584 FDFFFF1A 	    bne	    U0
- 367              	
- 368              	#exit from DRAM/SDRAM self refresh mode.
- 369 0588 44019FE5 	    ldr	    r0,=REFRESH
- 370 058c 003080E5 	    str	    r3,[r0]
- 371 0590 0EF0A0E1 	    mov	    pc,lr
- 372              	    
- 373 0594 CC030000 	    .ltorg
- 373      B4030000 
- 373      9C030000 
- 373      84030000 
- 373      6C030000 
- 374              	
- 375              	SMRDATA:
- 376              	#*****************************************************************
- 377              	#* Memory configuration has to be optimized for best performance *
- 378              	#* The following parameter is not optimized.                     *
+ 339              		#USER mode is not initialized.
+ 340 053c 0EF0A0E1 	    mov	    pc,lr 				/* The LR register may be not valid for the mode changes. */
+ 341              	
+ 342              	#****************************************************
+ 343              	#*	The function for entering power down mode		*
+ 344              	#****************************************************
+ 345              	#void EnterPWDN(int CLKCON);
+ 346              	EnterPWDN:
+ 347 0540 0020A0E1 	    mov	    r2,r0               /* r0=CLKCON */
+ 348 0544 80019FE5 	    ldr	    r0,=REFRESH		
+ 349 0548 003090E5 	    ldr	    r3,[r0]
+ 350 054c 0310A0E1 	    mov	    r1, r3
+ 351 0550 011581E3 	    orr	    r1, r1, #0x400000   /* self-refresh enable */
+ 352 0554 001080E5 	    str	    r1, [r0]
+ 353              	
+ 354 0558 0000A0E1 	    nop     /* Wait until self-refresh is issued. May not be needed. */
+ 355 055c 0000A0E1 	    nop     /* If the other bus master holds the bus, ... */
+ 356 0560 0000A0E1 	    nop	    /* mov r0, r0 */
+ 357 0564 0000A0E1 	    nop
+ 358 0568 0000A0E1 	    nop
+ 359 056c 0000A0E1 	    nop
+ 360 0570 0000A0E1 	    nop
+ 361              	
+ 362              	#enter POWERDN mode
+ 363 0574 1C019FE5 	    ldr	    r0,=CLKCON
+ 364 0578 002080E5 	    str	    r2,[r0]
+ 365              	
+ 366              	#wait until enter SL_IDLE,STOP mode and until wake-up
+ 367 057c 1000A0E3 	    ldr	    r0,=0x10
+ 368 0580 010050E2 	U0: subs    r0,r0,#1
+ 369 0584 FDFFFF1A 	    bne	    U0
+ 370              	
+ 371              	#exit from DRAM/SDRAM self refresh mode.
+ 372 0588 3C019FE5 	    ldr	    r0,=REFRESH
+ 373 058c 003080E5 	    str	    r3,[r0]
+ 374 0590 0EF0A0E1 	    mov	    pc,lr
+ 375              	    
+ 376 0594 CC030000 	    .ltorg
+ 376      B4030000 
+ 376      9C030000 
+ 376      84030000 
+ 376      6C030000 
+ 377              	
+ 378              	SMRDATA:
  379              	#*****************************************************************
- 380              	
- 381              	#*** memory access cycle parameter strategy ***
- 382              	# 1) Even FP-DRAM, EDO setting has more late fetch point by half-clock
- 383              	# 2) The memory settings,here, are made the safe parameters even at 66Mhz.
- 384              	# 3) FP-DRAM Parameters:tRCD=3 for tRAC, tcas=2 for pad delay, tcp=2 for bus load.
- 385              	# 4) DRAM refresh rate is for 40Mhz. 
- 386              	
- 387              	#bank0	16bit BOOT ROM
- 388              	#bank1	NandFlash(8bit)/IDE/USB/rtl8019as/LCD
- 389              	#bank2	No use 
- 390              	#bank3	Keyboard 
- 391              	#bank4	No use
- 392              	#bank5	No use
- 393              	#bank6	16bit SDRAM
- 394              	#bank7	No use
- 395              	
- 396              	.ifeq BUSWIDTH-16
- 397 06d8 02011111 		.long 0x11110102		/* Bank0=16bit BootRom(AT29C010A*2) :0x0 */
- 398              	.else
- 399              	   	.long 0x22222220		/* Bank0=OM[1:0], Bank1~Bank7=32bit 	 */
- 400              	.endif
- 401 06dc 00060000 		.long ((B0_Tacs<<13)+(B0_Tcos<<11)+(B0_Tacc<<8)+(B0_Tcoh<<6)+(B0_Tah<<4)+(B0_Tacp<<2)+(B0_PMC))	/*
- 402 06e0 FC7F0000 		.long ((B1_Tacs<<13)+(B1_Tcos<<11)+(B1_Tacc<<8)+(B1_Tcoh<<6)+(B1_Tah<<4)+(B1_Tacp<<2)+(B1_PMC))	/*
- 403 06e4 FC7F0000 		.long ((B2_Tacs<<13)+(B2_Tcos<<11)+(B2_Tacc<<8)+(B2_Tcoh<<6)+(B2_Tah<<4)+(B2_Tacp<<2)+(B2_PMC))	/*
- 404 06e8 FC7F0000 		.long ((B3_Tacs<<13)+(B3_Tcos<<11)+(B3_Tacc<<8)+(B3_Tcoh<<6)+(B3_Tah<<4)+(B3_Tacp<<2)+(B3_PMC))	/*
- 405 06ec FC7F0000 		.long ((B4_Tacs<<13)+(B4_Tcos<<11)+(B4_Tacc<<8)+(B4_Tcoh<<6)+(B4_Tah<<4)+(B4_Tacp<<2)+(B4_PMC))	/*
- 406 06f0 FC7F0000 		.long ((B5_Tacs<<13)+(B5_Tcos<<11)+(B5_Tacc<<8)+(B5_Tcoh<<6)+(B5_Tah<<4)+(B5_Tacp<<2)+(B5_PMC))	/*
- 407              		.ifc "DRAM",BDRAMTYPE
- 408              		    .long ((B6_MT<<15)+(B6_Trcd<<4)+(B6_Tcas<<3)+(B6_Tcp<<2)+(B6_CAN))	/* GCS6 check the MT value 
- 409              		    .long ((B7_MT<<15)+(B7_Trcd<<4)+(B7_Tcas<<3)+(B7_Tcp<<2)+(B7_CAN))	/* GCS7                    
- 410              		.else
- 411 06f4 00800100 			.long ((B6_MT<<15)+(B6_Trcd<<2)+(B6_SCAN))	/* GCS6 */
- 412 06f8 00800100 			.long ((B7_MT<<15)+(B7_Trcd<<2)+(B7_SCAN))	/* GCS7 */
- 413              		.endif
- 414 06fc 59048600 		.long ((REFEN<<23)+(TREFMD<<22)+(Trp<<20)+(Trc<<18)+(Tchr<<16)+REFCNT)	/* REFRESH RFEN=1, TREFMD=0
- 415 0700 10000000 		.long 0x10				/* SCLK power down mode, BANKSIZE 32M/32M */
- 416 0704 20000000 		.long 0x20				/* MRSR6 CL=2clk                          */
- 417 0708 20000000 		.long 0x20				/* MRSR7                                  */
- 418              	
- 419              	
- 420              	.equ 	UserStack,	_ISR_STARTADDRESS-0xf00    		/* c7ff000 */   	
- 421              	.equ	SVCStack,	_ISR_STARTADDRESS-0xf00+256    	/* c7ff100 */
- 422              	.equ	UndefStack,	_ISR_STARTADDRESS-0xf00+256*2   /* c7ff200 */
- 423              	.equ	AbortStack,	_ISR_STARTADDRESS-0xf00+256*3   /* c7ff300 */
- 424              	.equ	IRQStack,	_ISR_STARTADDRESS-0xf00+256*4   /* c7ff400 */
- 425              	.equ	FIQStack,	_ISR_STARTADDRESS-0xf00+256*5   /* c7ff500 */
- 426              	
- 427              	.equ	HandleReset,	_ISR_STARTADDRESS
- 428              	.equ	HandleUndef,	_ISR_STARTADDRESS+4
- 429              	.equ	HandleSWI,		_ISR_STARTADDRESS+4*2
- 430              	.equ	HandlePabort,	_ISR_STARTADDRESS+4*3
- 431              	.equ	HandleDabort,	_ISR_STARTADDRESS+4*4
- 432              	.equ	HandleReserved,	_ISR_STARTADDRESS+4*5
- 433              	.equ	HandleIRQ,		_ISR_STARTADDRESS+4*6
- 434              	.equ	HandleFIQ,		_ISR_STARTADDRESS+4*7
- 435              	
- 436              	# Don't use the label 'IntVectorTable',
- 437              	# because armasm.exe can not recognize this label correctly.
- 438              	# the value is different with an address you think it may be.
- 439              	# IntVectorTable
- 440              	.equ	HandleADC,    	_ISR_STARTADDRESS+4*8
- 441              	.equ	HandleRTC,		_ISR_STARTADDRESS+4*9
- 442              	.equ	HandleUTXD1, 	_ISR_STARTADDRESS+4*10
- 443              	.equ	HandleUTXD0,	_ISR_STARTADDRESS+4*11
- 444              	.equ	HandleSIO,		_ISR_STARTADDRESS+4*12
- 445              	.equ	HandleIIC,		_ISR_STARTADDRESS+4*13
- 446              	.equ	HandleURXD1,	_ISR_STARTADDRESS+4*14
- 447              	.equ	HandleURXD0,	_ISR_STARTADDRESS+4*15
- 448              	.equ	HandleTIMER5,	_ISR_STARTADDRESS+4*16
- 449              	.equ	HandleTIMER4,	_ISR_STARTADDRESS+4*17
- 450              	.equ	HandleTIMER3,	_ISR_STARTADDRESS+4*18
- 451              	.equ	HandleTIMER2,	_ISR_STARTADDRESS+4*19
- 452              	.equ	HandleTIMER1,	_ISR_STARTADDRESS+4*20
- 453              	.equ	HandleTIMER0,	_ISR_STARTADDRESS+4*21
- 454              	.equ	HandleUERR01,	_ISR_STARTADDRESS+4*22
- 455              	.equ	HandleWDT,		_ISR_STARTADDRESS+4*23
- 456              	.equ	HandleBDMA1, 	_ISR_STARTADDRESS+4*24
- 457              	.equ	HandleBDMA0,	_ISR_STARTADDRESS+4*25
- 458              	.equ	HandleZDMA1, 	_ISR_STARTADDRESS+4*26
- 459              	.equ	HandleZDMA0,	_ISR_STARTADDRESS+4*27
- 460              	.equ	HandleTICK,		_ISR_STARTADDRESS+4*28
- 461              	.equ	HandleEINT4567,	_ISR_STARTADDRESS+4*29
- 462              	.equ	HandleEINT3,	_ISR_STARTADDRESS+4*30
- 463              	.equ	HandleEINT2,	_ISR_STARTADDRESS+4*31
- 464              	.equ	HandleEINT1,	_ISR_STARTADDRESS+4*32
- 465              	.equ	HandleEINT0,	_ISR_STARTADDRESS+4*33		/* 0xc1(c7)fff84 */
- 466              	
- 467              	.global sudoku_candidatos_propagar_arm
- 468              	.global sudoku_candidatos_init_arm
+ 380              	#* Memory configuration has to be optimized for best performance *
+ 381              	#* The following parameter is not optimized.                     *
+ 382              	#*****************************************************************
+ 383              	
+ 384              	#*** memory access cycle parameter strategy ***
+ 385              	# 1) Even FP-DRAM, EDO setting has more late fetch point by half-clock
+ 386              	# 2) The memory settings,here, are made the safe parameters even at 66Mhz.
+ 387              	# 3) FP-DRAM Parameters:tRCD=3 for tRAC, tcas=2 for pad delay, tcp=2 for bus load.
+ 388              	# 4) DRAM refresh rate is for 40Mhz. 
+ 389              	
+ 390              	#bank0	16bit BOOT ROM
+ 391              	#bank1	NandFlash(8bit)/IDE/USB/rtl8019as/LCD
+ 392              	#bank2	No use 
+ 393              	#bank3	Keyboard 
+ 394              	#bank4	No use
+ 395              	#bank5	No use
+ 396              	#bank6	16bit SDRAM
+ 397              	#bank7	No use
+ 398              	
+ 399              	.ifeq BUSWIDTH-16
+ 400 06d0 02011111 		.long 0x11110102		/* Bank0=16bit BootRom(AT29C010A*2) :0x0 */
+ 401              	.else
+ 402              	   	.long 0x22222220		/* Bank0=OM[1:0], Bank1~Bank7=32bit 	 */
+ 403              	.endif
+ 404 06d4 00060000 		.long ((B0_Tacs<<13)+(B0_Tcos<<11)+(B0_Tacc<<8)+(B0_Tcoh<<6)+(B0_Tah<<4)+(B0_Tacp<<2)+(B0_PMC))	/*
+ 405 06d8 FC7F0000 		.long ((B1_Tacs<<13)+(B1_Tcos<<11)+(B1_Tacc<<8)+(B1_Tcoh<<6)+(B1_Tah<<4)+(B1_Tacp<<2)+(B1_PMC))	/*
+ 406 06dc FC7F0000 		.long ((B2_Tacs<<13)+(B2_Tcos<<11)+(B2_Tacc<<8)+(B2_Tcoh<<6)+(B2_Tah<<4)+(B2_Tacp<<2)+(B2_PMC))	/*
+ 407 06e0 FC7F0000 		.long ((B3_Tacs<<13)+(B3_Tcos<<11)+(B3_Tacc<<8)+(B3_Tcoh<<6)+(B3_Tah<<4)+(B3_Tacp<<2)+(B3_PMC))	/*
+ 408 06e4 FC7F0000 		.long ((B4_Tacs<<13)+(B4_Tcos<<11)+(B4_Tacc<<8)+(B4_Tcoh<<6)+(B4_Tah<<4)+(B4_Tacp<<2)+(B4_PMC))	/*
+ 409 06e8 FC7F0000 		.long ((B5_Tacs<<13)+(B5_Tcos<<11)+(B5_Tacc<<8)+(B5_Tcoh<<6)+(B5_Tah<<4)+(B5_Tacp<<2)+(B5_PMC))	/*
+ 410              		.ifc "DRAM",BDRAMTYPE
+ 411              		    .long ((B6_MT<<15)+(B6_Trcd<<4)+(B6_Tcas<<3)+(B6_Tcp<<2)+(B6_CAN))	/* GCS6 check the MT value 
+ 412              		    .long ((B7_MT<<15)+(B7_Trcd<<4)+(B7_Tcas<<3)+(B7_Tcp<<2)+(B7_CAN))	/* GCS7                    
+ 413              		.else
+ 414 06ec 00800100 			.long ((B6_MT<<15)+(B6_Trcd<<2)+(B6_SCAN))	/* GCS6 */
+ 415 06f0 00800100 			.long ((B7_MT<<15)+(B7_Trcd<<2)+(B7_SCAN))	/* GCS7 */
+ 416              		.endif
+ 417 06f4 59048600 		.long ((REFEN<<23)+(TREFMD<<22)+(Trp<<20)+(Trc<<18)+(Tchr<<16)+REFCNT)	/* REFRESH RFEN=1, TREFMD=0
+ 418 06f8 10000000 		.long 0x10				/* SCLK power down mode, BANKSIZE 32M/32M */
+ 419 06fc 20000000 		.long 0x20				/* MRSR6 CL=2clk                          */
+ 420 0700 20000000 		.long 0x20				/* MRSR7                                  */
+ 421              	
+ 422              	
+ 423              	.equ 	UserStack,	_ISR_STARTADDRESS-0xf00    		/* c7ff000 */   	
+ 424              	.equ	SVCStack,	_ISR_STARTADDRESS-0xf00+256    	/* c7ff100 */
+ 425              	.equ	UndefStack,	_ISR_STARTADDRESS-0xf00+256*2   /* c7ff200 */
+ 426              	.equ	AbortStack,	_ISR_STARTADDRESS-0xf00+256*3   /* c7ff300 */
+ 427              	.equ	IRQStack,	_ISR_STARTADDRESS-0xf00+256*4   /* c7ff400 */
+ 428              	.equ	FIQStack,	_ISR_STARTADDRESS-0xf00+256*5   /* c7ff500 */
+ 429              	
+ 430              	.equ	HandleReset,	_ISR_STARTADDRESS
+ 431              	.equ	HandleUndef,	_ISR_STARTADDRESS+4
+ 432              	.equ	HandleSWI,		_ISR_STARTADDRESS+4*2
+ 433              	.equ	HandlePabort,	_ISR_STARTADDRESS+4*3
+ 434              	.equ	HandleDabort,	_ISR_STARTADDRESS+4*4
+ 435              	.equ	HandleReserved,	_ISR_STARTADDRESS+4*5
+ 436              	.equ	HandleIRQ,		_ISR_STARTADDRESS+4*6
+ 437              	.equ	HandleFIQ,		_ISR_STARTADDRESS+4*7
+ 438              	
+ 439              	# Don't use the label 'IntVectorTable',
+ 440              	# because armasm.exe can not recognize this label correctly.
+ 441              	# the value is different with an address you think it may be.
+ 442              	# IntVectorTable
+ 443              	.equ	HandleADC,    	_ISR_STARTADDRESS+4*8
+ 444              	.equ	HandleRTC,		_ISR_STARTADDRESS+4*9
+ 445              	.equ	HandleUTXD1, 	_ISR_STARTADDRESS+4*10
+ 446              	.equ	HandleUTXD0,	_ISR_STARTADDRESS+4*11
+ 447              	.equ	HandleSIO,		_ISR_STARTADDRESS+4*12
+ 448              	.equ	HandleIIC,		_ISR_STARTADDRESS+4*13
+ 449              	.equ	HandleURXD1,	_ISR_STARTADDRESS+4*14
+ 450              	.equ	HandleURXD0,	_ISR_STARTADDRESS+4*15
+ 451              	.equ	HandleTIMER5,	_ISR_STARTADDRESS+4*16
+ 452              	.equ	HandleTIMER4,	_ISR_STARTADDRESS+4*17
+ 453              	.equ	HandleTIMER3,	_ISR_STARTADDRESS+4*18
+ 454              	.equ	HandleTIMER2,	_ISR_STARTADDRESS+4*19
+ 455              	.equ	HandleTIMER1,	_ISR_STARTADDRESS+4*20
+ 456              	.equ	HandleTIMER0,	_ISR_STARTADDRESS+4*21
+ 457              	.equ	HandleUERR01,	_ISR_STARTADDRESS+4*22
+ 458              	.equ	HandleWDT,		_ISR_STARTADDRESS+4*23
+ 459              	.equ	HandleBDMA1, 	_ISR_STARTADDRESS+4*24
+ 460              	.equ	HandleBDMA0,	_ISR_STARTADDRESS+4*25
+ 461              	.equ	HandleZDMA1, 	_ISR_STARTADDRESS+4*26
+ 462              	.equ	HandleZDMA0,	_ISR_STARTADDRESS+4*27
+ 463              	.equ	HandleTICK,		_ISR_STARTADDRESS+4*28
+ 464              	.equ	HandleEINT4567,	_ISR_STARTADDRESS+4*29
+ 465              	.equ	HandleEINT3,	_ISR_STARTADDRESS+4*30
+ 466              	.equ	HandleEINT2,	_ISR_STARTADDRESS+4*31
+ 467              	.equ	HandleEINT1,	_ISR_STARTADDRESS+4*32
+ 468              	.equ	HandleEINT0,	_ISR_STARTADDRESS+4*33		/* 0xc1(c7)fff84 */
  469              	
- 470              	################################################################################
- 471              	.arm
- 472              	sudoku_candidatos_init_arm:
- 473              	    @ r0 = cuadricula
- 474              	    @ r1 = fila
- 475              	    @ r2 = columna
- 476              	    @ r3 = valor actual
- 477              	    @ r4 = desplazamiento fila
- 478              	    @ r5 = desplazamiento columna
- 479              	    @ r6 = 0x1FF0 lista de candidatos
- 480              	    @ r7 = desplazamiento total
- 481              	
- 482 070c 0190A0E1 		MOV r9, r1						@ r9 = version propagar (C=0, ARM=1, THUMB=2)
- 483              	
- 484 0710 0010A0E3 	    MOV r1, #0
- 485 0714 1F6CA0E3 	    MOV r6, #0x1F00               	@ Cargar parte alta de (0x1F00)
- 486 0718 F06086E3 	    ORR r6, r6, #0x00F0           	@ Combinar parte baja (0x00F0) para obtener 0x1FF0
- 487              	
- 488              	init_fila:
- 489 071c 090051E3 	    CMP r1, #9
- 490 0720 0F0000AA 	    BGE fin_init
- 491              	
- 492 0724 8142A0E1 	    LSL r4, r1, #5					@ Desplazamiento a siguiente fila (r1 * 32 bytes)
- 493              	
- 494 0728 0020A0E3 	    MOV r2, #0
- 495              	init_columna:
- 496 072c 090052E3 	    CMP r2, #9
- 497 0730 090000AA 	    BGE fin_init_columna
- 498              	
- 499 0734 8250A0E1 	    LSL r5, r2, #1					@ Desplazamiento a siguiente columna (r2 * 2 bytes)
- 500              	
- 501 0738 057084E0 	    ADD r7, r4, r5        			@ Desplazamiento total (fila + columna)
- 502              	
- 503 073c B73090E1 	    LDRH r3, [r0, r7]
- 504              	
- 505 0740 028903E2 	   	AND r8, r3, #0x8000				@ Objeter valor de la pista
- 506 0744 020958E3 		CMP r8, #0x8000					@ Si pista == 1 se omite la inicializacion de candidatos
- 507 0748 010000AA 	    BGE skip_init
- 508              	
- 509 074c 063083E1 	    ORR r3, r3, r6        			@ celda |= 0x1FF0 - Activar todos los candidatos
- 510 0750 B73080E1 	    STRH r3, [r0, r7]
+ 470              	.global sudoku_candidatos_propagar_arm
+ 471              	.global sudoku_candidatos_init_arm
+ 472              	
+ 473              	################################################################################
+ 474              	.arm
+ 475              	sudoku_candidatos_init_arm:
+ 476              	    @ r0 = cuadricula
+ 477              	    @ r1 = fila
+ 478              	    @ r2 = columna
+ 479              	    @ r3 = valor actual
+ 480              	    @ r4 = desplazamiento fila
+ 481              	    @ r5 = desplazamiento columna
+ 482              	    @ r6 = 0x1FF0 lista de candidatos
+ 483              	    @ r7 = desplazamiento total
+ 484              	
+ 485 0704 0190A0E1 		MOV r9, r1						@ r9 = version propagar (C=0, ARM=1, THUMB=2)
+ 486              	
+ 487 0708 0010A0E3 	    MOV r1, #0
+ 488 070c 1F6CA0E3 	    MOV r6, #0x1F00               	@ Cargar parte alta de (0x1F00)
+ 489 0710 F06086E3 	    ORR r6, r6, #0x00F0           	@ Combinar parte baja (0x00F0) para obtener 0x1FF0
+ 490              	
+ 491              	init_fila:
+ 492 0714 090051E3 	    CMP r1, #9
+ 493 0718 0F0000AA 	    BGE fin_init
+ 494              	
+ 495 071c 8142A0E1 	    LSL r4, r1, #5					@ Desplazamiento a siguiente fila (r1 * 32 bytes)
+ 496              	
+ 497 0720 0020A0E3 	    MOV r2, #0
+ 498              	init_columna:
+ 499 0724 090052E3 	    CMP r2, #9
+ 500 0728 090000AA 	    BGE fin_init_columna
+ 501              	
+ 502 072c 8250A0E1 	    LSL r5, r2, #1					@ Desplazamiento a siguiente columna (r2 * 2 bytes)
+ 503              	
+ 504 0730 057084E0 	    ADD r7, r4, r5        			@ Desplazamiento total (fila + columna)
+ 505              	
+ 506 0734 B73090E1 	    LDRH r3, [r0, r7]
+ 507              	
+ 508 0738 028903E2 	   	AND r8, r3, #0x8000				@ Objeter valor de la pista
+ 509 073c 020958E3 		CMP r8, #0x8000					@ Si pista == 1 se omite la inicializacion de candidatos
+ 510 0740 010000AA 	    BGE skip_init
  511              	
- 512              	skip_init:
- 513 0754 012082E2 	    ADD r2, r2, #1
- 514 0758 F3FFFFEA 	    B init_columna
- 515              	
- 516              	fin_init_columna:
- 517 075c 011081E2 	    ADD r1, r1, #1
- 518 0760 EDFFFFEA 	    B init_fila
- 519              	
- 520              	fin_init:
- 521              	
- 522              	@ Recorrer la cuadricula para llamar a las versiones de propagar
- 523              	
- 524 0764 00A0A0E3 		MOV r10, #0							@ Contador de celdas vacias
- 525 0768 0010A0E3 		MOV r1, #0
- 526              	fila_cuadricula:
- 527 076c 090051E3 		CMP r1, #9
- 528 0770 1B0000AA 		BGE fin_cuadricula
- 529              	
- 530 0774 8142A0E1 		LSL r4, r1, #5
- 531              	
- 532 0778 0020A0E3 		MOV r2, #0
- 533              	recorrer_columna:
- 534 077c 090052E3 		CMP r2, #9
- 535 0780 150000AA 		BGE siguiente_fila
- 536              	
- 537 0784 8260A0E1 		LSL r6, r2, #1
- 538              	
- 539 0788 067084E0 		ADD r7, r4, r6
- 540              	
- 541 078c B73090E1 		LDRH r3, [r0, r7]
- 542              	
- 543 0790 0F3003E2 		AND r3, r3, #0xF				@celda_leer_valor()
- 544 0794 000053E3 		CMP r3, #0
- 545 0798 0300000A 		BEQ skip_propagation
- 546              	
- 547 079c 000059E3 		CMP r9, #0
- 548 07a0 0300000A 		BEQ propagar_C
+ 512 0744 063083E1 	    ORR r3, r3, r6        			@ celda |= 0x1FF0 - Activar todos los candidatos
+ 513 0748 B73080E1 	    STRH r3, [r0, r7]
+ 514              	
+ 515              	skip_init:
+ 516 074c 012082E2 	    ADD r2, r2, #1
+ 517 0750 F3FFFFEA 	    B init_columna
+ 518              	
+ 519              	fin_init_columna:
+ 520 0754 011081E2 	    ADD r1, r1, #1
+ 521 0758 EDFFFFEA 	    B init_fila
+ 522              	
+ 523              	fin_init:
+ 524              	
+ 525              	@ Recorrer la cuadricula para llamar a las versiones de propagar
+ 526              	
+ 527 075c 00A0A0E3 		MOV r10, #0							@ Contador de celdas vacias
+ 528 0760 0010A0E3 		MOV r1, #0
+ 529              	fila_cuadricula:
+ 530 0764 090051E3 		CMP r1, #9
+ 531 0768 1B0000AA 		BGE fin_cuadricula
+ 532              	
+ 533 076c 8142A0E1 		LSL r4, r1, #5
+ 534              	
+ 535 0770 0020A0E3 		MOV r2, #0
+ 536              	recorrer_columna:
+ 537 0774 090052E3 		CMP r2, #9
+ 538 0778 150000AA 		BGE siguiente_fila
+ 539              	
+ 540 077c 8260A0E1 		LSL r6, r2, #1
+ 541              	
+ 542 0780 067084E0 		ADD r7, r4, r6
+ 543              	
+ 544 0784 B73090E1 		LDRH r3, [r0, r7]
+ 545              	
+ 546 0788 0F3003E2 		AND r3, r3, #0xF				@celda_leer_valor()
+ 547 078c 000053E3 		CMP r3, #0
+ 548 0790 0300000A 		BEQ skip_propagation
  549              	
- 550 07a4 010059E3 		CMP r9, #1
- 551 07a8 0500000A 		BEQ propagar_ARM
- 552              	skip_propagation:
- 553 07ac 01A08AE2 		ADD r10, r10, #1
- 554 07b0 070000EA 		B final_columna
- 555              	propagar_C:
- 556 07b4 FF5F2DE8 		STMED SP!, {r0-r12, r14}
- 557 07b8 FEFFFFEB 		BL sudoku_candidatos_propagar_c
- 558 07bc FF5FBDE9 		LDMED SP!, {r0-r12, r14}
- 559 07c0 030000EA 		B final_columna
- 560              	propagar_ARM:
- 561 07c4 FF5F2DE8 		STMED SP!, {r0-r12, r14}
- 562 07c8 FEFFFFEB 		BL sudoku_candidatos_propagar_arm
- 563 07cc FF5FBDE9 		LDMED SP!, {r0-r12, r14}
- 564 07d0 FFFFFFEA 		B final_columna
- 565              	#propagar_THUMB:
- 566              	#	BL sudoku_candidatos_propagar_arm
- 567              	#	B final_columna
- 568              	final_columna:
- 569 07d4 012082E2 		ADD r2, r2, #1
- 570 07d8 E7FFFFEA 		B recorrer_columna
- 571              	siguiente_fila:
- 572 07dc 011081E2 		ADD r1, r1, #1
- 573 07e0 E1FFFFEA 		B fila_cuadricula
- 574              	fin_cuadricula:
- 575 07e4 0A00A0E1 		MOV r0, r10
- 576 07e8 1EFF2FE1 	  	BX lr
- 577              	
- 578              	
- 579              	@ Calcula el desplazamiento necesario para llegar a la celda, y llama a las funciones de propagacio
- 580              	sudoku_candidatos_propagar_arm:
- 581 07ec 00582DE9 		STMFD sp!, {r11, r12, lr}
- 582              		@ r0 = cuadricula
- 583              		@ r1 = indice fila
- 584              		@ r2 = indice columna
- 585              		@ r3 = valor actual celda
- 586              		@ r4 = desplazamiento de la fila
- 587              		@ r5 = desplazamiento de la columna
- 588              		@ r6 = bit desplazado (se usara para desactivar los candidatos)
- 589              		@ r7 = desplazamiento total (r4 + r5)
- 590              	
- 591 07f0 8142A0E1 		LSL r4, r1, #5							@ Desplazamiento fila (r1 * 32 bytes)
- 592              	
- 593 07f4 8250A0E1 		LSL r5, r2, #1							@ Desplazamiento columna (r2 * 2 bytes)
- 594              	
- 595 07f8 057084E0 		ADD r7, r4, r5							@ Desplazamiento total (fila + columna)
- 596              	
- 597 07fc 038083E2 		ADD r8, r3, #3							@ r8 = displace = (3 + r3)
- 598              	
- 599 0800 0160A0E3 		MOV r6, #1
- 600 0804 1668A0E1 		LSL r6, r6, r8							@ desplazar bit a la izquierda r8 posiciones
+ 550 0794 000059E3 		CMP r9, #0
+ 551 0798 0300000A 		BEQ propagar_C
+ 552              	
+ 553 079c 010059E3 		CMP r9, #1
+ 554 07a0 0500000A 		BEQ propagar_ARM
+ 555              	skip_propagation:
+ 556 07a4 01A08AE2 		ADD r10, r10, #1
+ 557 07a8 070000EA 		B final_columna
+ 558              	propagar_C:
+ 559 07ac FF5F2DE8 		STMED SP!, {r0-r12, r14}
+ 560 07b0 FEFFFFEB 		BL sudoku_candidatos_propagar_c
+ 561 07b4 FF5FBDE9 		LDMED SP!, {r0-r12, r14}
+ 562 07b8 030000EA 		B final_columna
+ 563              	propagar_ARM:
+ 564 07bc FF5F2DE8 		STMED SP!, {r0-r12, r14}
+ 565 07c0 FEFFFFEB 		BL sudoku_candidatos_propagar_arm
+ 566 07c4 FF5FBDE9 		LDMED SP!, {r0-r12, r14}
+ 567 07c8 FFFFFFEA 		B final_columna
+ 568              	#propagar_THUMB:
+ 569              	#	BL sudoku_candidatos_propagar_arm
+ 570              	#	B final_columna
+ 571              	final_columna:
+ 572 07cc 012082E2 		ADD r2, r2, #1
+ 573 07d0 E7FFFFEA 		B recorrer_columna
+ 574              	siguiente_fila:
+ 575 07d4 011081E2 		ADD r1, r1, #1
+ 576 07d8 E1FFFFEA 		B fila_cuadricula
+ 577              	fin_cuadricula:
+ 578 07dc 0A00A0E1 		MOV r0, r10
+ 579 07e0 1EFF2FE1 	  	BX lr
+ 580              	
+ 581              	
+ 582              	@ Calcula el desplazamiento necesario para llegar a la celda, y llama a las funciones de propagacio
+ 583              	sudoku_candidatos_propagar_arm:
+ 584 07e4 00582DE9 		STMFD sp!, {r11, r12, lr}
+ 585              		@ r0 = cuadricula
+ 586              		@ r1 = indice fila
+ 587              		@ r2 = indice columna
+ 588              		@ r3 = valor actual celda
+ 589              		@ r4 = desplazamiento de la fila
+ 590              		@ r5 = desplazamiento de la columna
+ 591              		@ r6 = bit desplazado (se usara para desactivar los candidatos)
+ 592              		@ r7 = desplazamiento total (r4 + r5)
+ 593              	
+ 594 07e8 8142A0E1 		LSL r4, r1, #5							@ Desplazamiento fila (r1 * 32 bytes)
+ 595              	
+ 596 07ec 8250A0E1 		LSL r5, r2, #1							@ Desplazamiento columna (r2 * 2 bytes)
+ 597              	
+ 598 07f0 057084E0 		ADD r7, r4, r5							@ Desplazamiento total (fila + columna)
+ 599              	
+ 600 07f4 038083E2 		ADD r8, r3, #3							@ r8 = displace = (3 + r3)
  601              	
- 602 0808 B78090E1 		LDRH r8, [r0, r7]
- 603              	
- 604              	@ Actualiza los candidatos de la fila (verticalmente)
- 605 080c 0090A0E3 		MOV r9, #0
- 606              	fila_loop:
- 607 0810 090059E3 	    CMP r9, #9
- 608 0814 0B0000AA 	    BGE fin_fila
- 609              	
- 610 0818 89A2A0E1 	    LSL r10, r9, #5               			@ Desplazar la fila (r9 * 32)
- 611 081c 05B08AE0 	    ADD r11, r10, r5               			@ r11 = desplazamiento total = fila + columna (columna fija p
+ 602 07f8 0160A0E3 		MOV r6, #1
+ 603 07fc 1668A0E1 		LSL r6, r6, r8							@ desplazar bit a la izquierda r8 posiciones
+ 604              	
+ 605 0800 B78090E1 		LDRH r8, [r0, r7]
+ 606              	
+ 607              	@ Actualiza los candidatos de la fila (verticalmente)
+ 608 0804 0090A0E3 		MOV r9, #0
+ 609              	fila_loop:
+ 610 0808 090059E3 	    CMP r9, #9
+ 611 080c 0B0000AA 	    BGE fin_fila
  612              	
- 613 0820 BB8090E1 	    LDRH r8, [r0, r11]
- 614              	
- 615 0824 02C908E2 	    AND r12, r8, #0x8000
- 616 0828 02095CE3 	    CMP r12, #0x8000
- 617 082c 0300000A 	    BEQ skip_row
- 618              	
- 619 0830 010059E1 	    CMP r9, r1
- 620 0834 0100000A 	    BEQ skip_row
+ 613 0810 89A2A0E1 	    LSL r10, r9, #5               			@ Desplazar la fila (r9 * 32)
+ 614 0814 05B08AE0 	    ADD r11, r10, r5               			@ r11 = desplazamiento total = fila + columna (columna fija p
+ 615              	
+ 616 0818 BB8090E1 	    LDRH r8, [r0, r11]
+ 617              	
+ 618 081c 02C908E2 	    AND r12, r8, #0x8000
+ 619 0820 02095CE3 	    CMP r12, #0x8000
+ 620 0824 0300000A 	    BEQ skip_row
  621              	
- 622 0838 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar el bit candidato
- 623 083c BB8080E1 	    STRH r8, [r0, r11]
- 624              	skip_row:
- 625 0840 019089E2 	    ADD r9, r9, #1
- 626 0844 F1FFFFEA 	    B fila_loop
- 627              	fin_fila:
- 628              	@ Actualiza los candidatos de la columna (Horizontalmente)
- 629 0848 0090A0E3 		MOV r9, #0
- 630              	col_loop:
- 631 084c 090059E3 	    CMP r9, #9
- 632 0850 0B0000AA 	    BGE fin_col
- 633              	
- 634 0854 89A0A0E1 	    LSL r10, r9, #1               			@ Desplazar la columna (r9 * 2)
- 635 0858 0AB084E0 	    ADD r11, r4, r10               			@ r11 = desplazamiento total = fila + columna (fila fija para
+ 622 0828 010059E1 	    CMP r9, r1
+ 623 082c 0100000A 	    BEQ skip_row
+ 624              	
+ 625 0830 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar el bit candidato
+ 626 0834 BB8080E1 	    STRH r8, [r0, r11]
+ 627              	skip_row:
+ 628 0838 019089E2 	    ADD r9, r9, #1
+ 629 083c F1FFFFEA 	    B fila_loop
+ 630              	fin_fila:
+ 631              	@ Actualiza los candidatos de la columna (Horizontalmente)
+ 632 0840 0090A0E3 		MOV r9, #0
+ 633              	col_loop:
+ 634 0844 090059E3 	    CMP r9, #9
+ 635 0848 0B0000AA 	    BGE fin_col
  636              	
- 637 085c BB8090E1 	    LDRH r8, [r0, r11]
- 638              	
- 639 0860 02C908E2 	    AND r12, r8, #0x8000
- 640 0864 02095CE3 	    CMP r12, #0x8000
- 641 0868 0300000A 	    BEQ skip_column
- 642              	
- 643 086c 020059E1 	    CMP r9, r2
- 644 0870 0100000A 	    BEQ skip_column
+ 637 084c 89A0A0E1 	    LSL r10, r9, #1               			@ Desplazar la columna (r9 * 2)
+ 638 0850 0AB084E0 	    ADD r11, r4, r10               			@ r11 = desplazamiento total = fila + columna (fila fija para
+ 639              	
+ 640 0854 BB8090E1 	    LDRH r8, [r0, r11]
+ 641              	
+ 642 0858 02C908E2 	    AND r12, r8, #0x8000
+ 643 085c 02095CE3 	    CMP r12, #0x8000
+ 644 0860 0300000A 	    BEQ skip_column
  645              	
- 646 0874 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar bit candidato
- 647 0878 BB8080E1 	    STRH r8, [r0, r11]
- 648              	skip_column:
- 649 087c 019089E2 	    ADD r9, r9, #1
- 650 0880 F1FFFFEA 	    B col_loop
- 651              	fin_col:
- 652              	@ Calcula el limite inferior (esquina superior izquierda) y limite superior de la region 3x3 corres
- 653 0884 0180A0E1 		MOV r8, r1
- 654 0888 0090A0E3 		MOV r9, #0
- 655              	row_index:
- 656 088c 030058E3 		CMP r8, #3
- 657 0890 020000BA 		BLT row_index_end						@ Si es menor a 3, termina el calculo de fila
- 658              	
- 659 0894 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region v
- 660 0898 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
- 661 089c FAFFFFEA 		B row_index
- 662              	row_index_end:
- 663 08a0 0970A0E1 		MOV r7, r9								@ Guardar el indice calculado en r8 (fila)
- 664              	
- 665 08a4 0280A0E1 		MOV r8, r2
- 666 08a8 0090A0E3 		MOV r9, #0
- 667              	col_index:
- 668 08ac 030058E3 		CMP r8, #3
- 669 08b0 020000BA 		BLT col_index_end						@ Si es menor a 3, termina el calculo de columna
- 670              	
- 671 08b4 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1°,2° o 3° region h
- 672 08b8 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
- 673 08bc FAFFFFEA 		B col_index
- 674              	col_index_end:
- 675 08c0 0980A0E1 		MOV r8, r9								@ Guardar el indice calculado en r7 (columna)
- 676              	
- 677 08c4 039087E2 		ADD r9, r7, #3							@ r9 = Limite superior de la fila
- 678 08c8 03A088E2 		ADD r10, r8, #3							@ r10 = Limite superior de la columna
- 679              	@ Actualiza los candidatos de la region 3x3
- 680              	region_row_loop:
- 681 08cc 090057E1 		CMP r7, r9
- 682 08d0 130000AA 		BGE end_of_region
- 683              	region_col_loop:
- 684 08d4 0A0058E1 		CMP r8, r10
- 685 08d8 0E0000AA 		BGE end_of_column
- 686              	
- 687 08dc 8742A0E1 		LSL r4, r7, #5							@ Desplazamiento fila (r7 * 32)
- 688 08e0 8850A0E1 		LSL r5, r8, #1							@ Desplazamiento columna (r10 * 2)
- 689 08e4 05B084E0 		ADD r11, r4, r5							@ Desplazamiento total de la celda (fila + columna)
- 690              	
- 691 08e8 BBC090E1 		LDRH r12, [r0, r11]
- 692              	
- 693 08ec 02490CE2 		AND r4, r12, #0x8000
- 694 08f0 020954E3 		CMP r4, #0x8000
- 695 08f4 0500000A 		BEQ skip_cell
- 696              	
- 697 08f8 010057E1 		CMP r7, r1
- 698 08fc 0300000A 		BEQ skip_cell
+ 646 0864 020059E1 	    CMP r9, r2
+ 647 0868 0100000A 	    BEQ skip_column
+ 648              	
+ 649 086c 0680C8E1 	    BIC r8, r8, r6               			@ celda &= ~(1 << displace) - Actualizar bit candidato
+ 650 0870 BB8080E1 	    STRH r8, [r0, r11]
+ 651              	skip_column:
+ 652 0874 019089E2 	    ADD r9, r9, #1
+ 653 0878 F1FFFFEA 	    B col_loop
+ 654              	fin_col:
+ 655              	@ Calcula el limite inferior (esquina superior izquierda) y limite superior de la region 3x3 corres
+ 656 087c 0180A0E1 		MOV r8, r1
+ 657 0880 0090A0E3 		MOV r9, #0
+ 658              	row_index:
+ 659 0884 030058E3 		CMP r8, #3
+ 660 0888 020000BA 		BLT row_index_end						@ Si es menor a 3, termina el calculo de fila
+ 661              	
+ 662 088c 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1ï¿½,2ï¿½ o 3ï¿½ re
+ 663 0890 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+ 664 0894 FAFFFFEA 		B row_index
+ 665              	row_index_end:
+ 666 0898 0970A0E1 		MOV r7, r9								@ Guardar el indice calculado en r8 (fila)
+ 667              	
+ 668 089c 0280A0E1 		MOV r8, r2
+ 669 08a0 0090A0E3 		MOV r9, #0
+ 670              	col_index:
+ 671 08a4 030058E3 		CMP r8, #3
+ 672 08a8 020000BA 		BLT col_index_end						@ Si es menor a 3, termina el calculo de columna
+ 673              	
+ 674 08ac 038048E2 		SUB r8, r8, #3							@ Restas sucesivas para determinar la region de la celda (1ï¿½,2ï¿½ o 3ï¿½ re
+ 675 08b0 039089E2 		ADD r9, r9, #3							@ Aumentar #3 para ubicarse al inicio de la region correspondiente
+ 676 08b4 FAFFFFEA 		B col_index
+ 677              	col_index_end:
+ 678 08b8 0980A0E1 		MOV r8, r9								@ Guardar el indice calculado en r7 (columna)
+ 679              	
+ 680 08bc 039087E2 		ADD r9, r7, #3							@ r9 = Limite superior de la fila
+ 681 08c0 03A088E2 		ADD r10, r8, #3							@ r10 = Limite superior de la columna
+ 682              	@ Actualiza los candidatos de la region 3x3
+ 683              	region_row_loop:
+ 684 08c4 090057E1 		CMP r7, r9
+ 685 08c8 130000AA 		BGE end_of_region
+ 686              	region_col_loop:
+ 687 08cc 0A0058E1 		CMP r8, r10
+ 688 08d0 0E0000AA 		BGE end_of_column
+ 689              	
+ 690 08d4 8742A0E1 		LSL r4, r7, #5							@ Desplazamiento fila (r7 * 32)
+ 691 08d8 8850A0E1 		LSL r5, r8, #1							@ Desplazamiento columna (r10 * 2)
+ 692 08dc 05B084E0 		ADD r11, r4, r5							@ Desplazamiento total de la celda (fila + columna)
+ 693              	
+ 694 08e0 BBC090E1 		LDRH r12, [r0, r11]
+ 695              	
+ 696 08e4 02490CE2 		AND r4, r12, #0x8000
+ 697 08e8 020954E3 		CMP r4, #0x8000
+ 698 08ec 0500000A 		BEQ skip_cell
  699              	
- 700 0900 020058E1 		CMP r8, r2
- 701 0904 0100000A 		BEQ skip_cell
+ 700 08f0 010057E1 		CMP r7, r1
+ 701 08f4 0300000A 		BEQ skip_cell
  702              	
- 703 0908 06C0CCE1 		BIC r12, r12, r6						@ celda &= ~(1 << displace) - Actualizar bit candidato
- 704 090c BBC080E1 		STRH r12, [r0, r11]
- 705              	skip_cell:
- 706 0910 018088E2 		ADD r8, r8, #1
- 707 0914 EEFFFFEA 		B region_col_loop
- 708              	end_of_column:
- 709 0918 017087E2 		ADD r7, r7, #1
- 710 091c 038048E2 		SUB r8, r8, #3						@ Regresar a la primera columa de la región
- 711 0920 E9FFFFEA 		B region_row_loop
- 712              	end_of_region:
- 713 0924 0058BDE8 		LDMFD sp!, {r11, r12, lr}
- 714 0928 1EFF2FE1 		BX lr
- 715              	
- 716              	################################################################################
- 717              	.data
- 718              	.ltorg
- 719 0006 00000000 	.align 5    /* guarantees 32-byte alignment (2^5) */
- 719      00000000 
- 719      00000000 
- 719      00000000 
- 719      00000000 
- 720              	
- 721              	# huecos para cuadrar
- 722              	.global cuadricula
+ 703 08f8 020058E1 		CMP r8, r2
+ 704 08fc 0100000A 		BEQ skip_cell
+ 705              	
+ 706 0900 06C0CCE1 		BIC r12, r12, r6						@ celda &= ~(1 << displace) - Actualizar bit candidato
+ 707 0904 BBC080E1 		STRH r12, [r0, r11]
+ 708              	skip_cell:
+ 709 0908 018088E2 		ADD r8, r8, #1
+ 710 090c EEFFFFEA 		B region_col_loop
+ 711              	end_of_column:
+ 712 0910 017087E2 		ADD r7, r7, #1
+ 713 0914 038048E2 		SUB r8, r8, #3						@ Regresar a la primera columa de la regiï¿½n
+ 714 0918 E9FFFFEA 		B region_row_loop
+ 715              	end_of_region:
+ 716 091c 0058BDE8 		LDMFD sp!, {r11, r12, lr}
+ 717 0920 1EFF2FE1 		BX lr
+ 718              	
+ 719              	################################################################################
+ 720              	.data
+ 721              	.ltorg
+ 722 0006 00000000 	.align 5    /* guarantees 32-byte alignment (2^5) */
+ 722      00000000 
+ 722      00000000 
+ 722      00000000 
+ 722      00000000 
  723              	
- 724              	cuadricula:
- 725              	     /* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
- 726 0020 05800000 	    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0, 0,0,0,0,0,0
- 726      00000380 
- 726      00000000 
- 726      00000000 
- 726      00000000 
- 727 0040 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x8009,0x0000,0x0000,0x0000,0x8005,0,0,0,0,0,0,0
- 727      00000000 
- 727      09800000 
- 727      00000000 
- 727      05800000 
- 728 0060 00000980 	    .hword   0x0000,0x8009,0x8006,0x8007,0x0000,0x8005,0x0000,0x8003,0x0000,0,0,0,0,0,0,0
- 728      06800780 
- 728      00000580 
- 728      00000380 
- 728      00000000 
- 729 0080 00000880 	    .hword   0x0000,0x8008,0x0000,0x8009,0x0000,0x0000,0x8006,0x0000,0x0000,0,0,0,0,0,0,0
- 729      00000980 
+ 724              	# huecos para cuadrar
+ 725              	.global cuadricula
+ 726              	
+ 727              	cuadricula:
+ 728              	     /* 9 filas de 16 entradas para facilitar la visualizacion, 16 bits por celda */
+ 729 0020 05800000 	    .hword   0x8005,0x0000,0x0000,0x8003,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 729      00000380 
  729      00000000 
- 729      06800000 
  729      00000000 
- 730 00a0 00000000 	    .hword   0x0000,0x0000,0x8005,0x8008,0x8006,0x8001,0x8004,0x0000,0x0000,0,0,0,0,0,0,0
- 730      05800880 
- 730      06800180 
- 730      04800000 
+ 729      00000000 
+ 730 0040 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x8009,0x0000,0x0000,0x0000,0x8005,0,0,0,0,0,0,0
  730      00000000 
- 731 00c0 00000000 	    .hword   0x0000,0x0000,0x8004,0x8002,0x0000,0x8003,0x0000,0x8007,0x0000,0,0,0,0,0,0,0
- 731      04800280 
+ 730      09800000 
+ 730      00000000 
+ 730      05800000 
+ 731 0060 00000980 	    .hword   0x0000,0x8009,0x8006,0x8007,0x0000,0x8005,0x0000,0x8003,0x0000,0,0,0,0,0,0,0
+ 731      06800780 
+ 731      00000580 
  731      00000380 
- 731      00000780 
  731      00000000 
- 732 00e0 00000780 	    .hword   0x0000,0x8007,0x0000,0x8005,0x0000,0x8009,0x8002,0x8006,0x0000,0,0,0,0,0,0,0
- 732      00000580 
+ 732 0080 00000880 	    .hword   0x0000,0x8008,0x0000,0x8009,0x0000,0x0000,0x8006,0x0000,0x0000,0,0,0,0,0,0,0
  732      00000980 
- 732      02800680 
  732      00000000 
- 733 0100 06800000 	    .hword   0x8006,0x0000,0x0000,0x0000,0x8008,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 732      06800000 
+ 732      00000000 
+ 733 00a0 00000000 	    .hword   0x0000,0x0000,0x8005,0x8008,0x8006,0x8001,0x8004,0x0000,0x0000,0,0,0,0,0,0,0
+ 733      05800880 
+ 733      06800180 
+ 733      04800000 
  733      00000000 
- 733      08800000 
- 733      00000000 
- 733      00000000 
- 734 0120 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x8002,0x0000,0x0000,0x8001,0,0,0,0,0,0,0
+ 734 00c0 00000000 	    .hword   0x0000,0x0000,0x8004,0x8002,0x0000,0x8003,0x0000,0x8007,0x0000,0,0,0,0,0,0,0
+ 734      04800280 
+ 734      00000380 
+ 734      00000780 
  734      00000000 
- 734      00000280 
- 734      00000000 
- 734      01800000 
- 735              	.end
+ 735 00e0 00000780 	    .hword   0x0000,0x8007,0x0000,0x8005,0x0000,0x8009,0x8002,0x8006,0x0000,0,0,0,0,0,0,0
+ 735      00000580 
+ 735      00000980 
+ 735      02800680 
+ 735      00000000 
+ 736 0100 06800000 	    .hword   0x8006,0x0000,0x0000,0x0000,0x8008,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 736      00000000 
+ 736      08800000 
+ 736      00000000 
+ 736      00000000 
+ 737 0120 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x8002,0x0000,0x0000,0x8001,0,0,0,0,0,0,0
+ 737      00000000 
+ 737      00000280 
+ 737      00000000 
+ 737      01800000 
+ 738              	.end
 DEFINED SYMBOLS
 C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/option.a:9      *ABS*:0c7fff00 _ISR_STARTADDRESS
                             *ABS*:00000010 BUSWIDTH
@@ -1194,7 +1197,7 @@ C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/memcfg.a:114    *ABS*:00000459 
 ../common/44binit.asm:154    .text:000001a4 HandlerUTXD1
 ../common/44binit.asm:153    .text:0000018c HandlerRTC
 ../common/44binit.asm:152    .text:00000174 HandlerADC
-../common/44binit.asm:343    .text:00000540 EnterPWDN
+../common/44binit.asm:346    .text:00000540 EnterPWDN
                             *ABS*:0c7fff1c HandleFIQ
                             *ABS*:0c7fff18 HandleIRQ
                             *ABS*:0c7fff04 HandleUndef
@@ -1231,59 +1234,57 @@ C:\Users\Jorge\Eclipse-Juno\Practica_2_PH\common/memcfg.a:114    *ABS*:00000459 
 ../common/44binit.asm:209    .text:00000424 l2
 ../common/44binit.asm:196    .text:00000400 l0
 ../common/44binit.asm:202    .text:00000410 l1
-../common/44binit.asm:375    .text:000006d8 SMRDATA
+../common/44binit.asm:378    .text:000006d0 SMRDATA
                             *ABS*:0c7ff100 SVCStack
-../common/44binit.asm:308    .text:000004f4 InitStacks
-../common/44binit.asm:290    .text:000004cc F1
-../common/44binit.asm:285    .text:000004bc F0
-../common/44binit.asm:293    .text:000004d4 F2
+../common/44binit.asm:311    .text:000004f4 InitStacks
+../common/44binit.asm:293    .text:000004cc F1
+../common/44binit.asm:288    .text:000004bc F0
+../common/44binit.asm:296    .text:000004d4 F2
                             *ABS*:0c7ff200 UndefStack
                             *ABS*:0c7ff300 AbortStack
                             *ABS*:0c7ff400 IRQStack
                             *ABS*:0c7ff500 FIQStack
-../common/44binit.asm:365    .text:00000580 U0
-../common/44binit.asm:373    .text:00000594 $d
-../common/44binit.asm:420    *ABS*:0c7ff000 UserStack
-../common/44binit.asm:427    *ABS*:0c7fff00 HandleReset
-../common/44binit.asm:432    *ABS*:0c7fff14 HandleReserved
-../common/44binit.asm:580    .text:000007ec sudoku_candidatos_propagar_arm
-../common/44binit.asm:472    .text:0000070c sudoku_candidatos_init_arm
-../common/44binit.asm:482    .text:0000070c $a
-../common/44binit.asm:488    .text:0000071c init_fila
-../common/44binit.asm:520    .text:00000764 fin_init
-../common/44binit.asm:495    .text:0000072c init_columna
-../common/44binit.asm:516    .text:0000075c fin_init_columna
-../common/44binit.asm:512    .text:00000754 skip_init
-../common/44binit.asm:526    .text:0000076c fila_cuadricula
-../common/44binit.asm:574    .text:000007e4 fin_cuadricula
-../common/44binit.asm:533    .text:0000077c recorrer_columna
-../common/44binit.asm:571    .text:000007dc siguiente_fila
-../common/44binit.asm:552    .text:000007ac skip_propagation
-../common/44binit.asm:555    .text:000007b4 propagar_C
-../common/44binit.asm:560    .text:000007c4 propagar_ARM
-../common/44binit.asm:568    .text:000007d4 final_columna
-../common/44binit.asm:606    .text:00000810 fila_loop
-../common/44binit.asm:627    .text:00000848 fin_fila
-../common/44binit.asm:624    .text:00000840 skip_row
-../common/44binit.asm:630    .text:0000084c col_loop
-../common/44binit.asm:651    .text:00000884 fin_col
-../common/44binit.asm:648    .text:0000087c skip_column
-../common/44binit.asm:655    .text:0000088c row_index
-../common/44binit.asm:662    .text:000008a0 row_index_end
-../common/44binit.asm:667    .text:000008ac col_index
-../common/44binit.asm:674    .text:000008c0 col_index_end
-../common/44binit.asm:680    .text:000008cc region_row_loop
-../common/44binit.asm:712    .text:00000924 end_of_region
-../common/44binit.asm:683    .text:000008d4 region_col_loop
-../common/44binit.asm:708    .text:00000918 end_of_column
-../common/44binit.asm:705    .text:00000910 skip_cell
-../common/44binit.asm:719    .data:00000006 $d
-../common/44binit.asm:724    .data:00000020 cuadricula
+../common/44binit.asm:368    .text:00000580 U0
+../common/44binit.asm:376    .text:00000594 $d
+../common/44binit.asm:423    *ABS*:0c7ff000 UserStack
+../common/44binit.asm:430    *ABS*:0c7fff00 HandleReset
+../common/44binit.asm:435    *ABS*:0c7fff14 HandleReserved
+../common/44binit.asm:583    .text:000007e4 sudoku_candidatos_propagar_arm
+../common/44binit.asm:475    .text:00000704 sudoku_candidatos_init_arm
+../common/44binit.asm:485    .text:00000704 $a
+../common/44binit.asm:491    .text:00000714 init_fila
+../common/44binit.asm:523    .text:0000075c fin_init
+../common/44binit.asm:498    .text:00000724 init_columna
+../common/44binit.asm:519    .text:00000754 fin_init_columna
+../common/44binit.asm:515    .text:0000074c skip_init
+../common/44binit.asm:529    .text:00000764 fila_cuadricula
+../common/44binit.asm:577    .text:000007dc fin_cuadricula
+../common/44binit.asm:536    .text:00000774 recorrer_columna
+../common/44binit.asm:574    .text:000007d4 siguiente_fila
+../common/44binit.asm:555    .text:000007a4 skip_propagation
+../common/44binit.asm:558    .text:000007ac propagar_C
+../common/44binit.asm:563    .text:000007bc propagar_ARM
+../common/44binit.asm:571    .text:000007cc final_columna
+../common/44binit.asm:609    .text:00000808 fila_loop
+../common/44binit.asm:630    .text:00000840 fin_fila
+../common/44binit.asm:627    .text:00000838 skip_row
+../common/44binit.asm:633    .text:00000844 col_loop
+../common/44binit.asm:654    .text:0000087c fin_col
+../common/44binit.asm:651    .text:00000874 skip_column
+../common/44binit.asm:658    .text:00000884 row_index
+../common/44binit.asm:665    .text:00000898 row_index_end
+../common/44binit.asm:670    .text:000008a4 col_index
+../common/44binit.asm:677    .text:000008b8 col_index_end
+../common/44binit.asm:683    .text:000008c4 region_row_loop
+../common/44binit.asm:715    .text:0000091c end_of_region
+../common/44binit.asm:686    .text:000008cc region_col_loop
+../common/44binit.asm:711    .text:00000910 end_of_column
+../common/44binit.asm:708    .text:00000908 skip_cell
+../common/44binit.asm:722    .data:00000006 $d
+../common/44binit.asm:727    .data:00000020 cuadricula
                    .debug_aranges:0000000c $d
 
 UNDEFINED SYMBOLS
-Image_RO_Limit
-Image_RW_Base
 Image_ZI_Base
 Image_ZI_Limit
 Main
